@@ -66,6 +66,43 @@ render_header(
 
 
 # ---------------------------------------------------------
+# Compact answer-length tabs
+# ---------------------------------------------------------
+
+st.markdown(
+    """
+    <style>
+    div[data-testid="stSegmentedControl"] button {
+        min-height: 30px !important;
+        padding: 3px 11px !important;
+        font-size: 0.82rem !important;
+        line-height: 1.1 !important;
+    }
+    div[data-testid="stSegmentedControl"] [data-testid="stMarkdownContainer"] p {
+        font-size: 0.82rem !important;
+        margin: 0 !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+left_space, answer_length_col, right_space = st.columns([1, 2, 1])
+with answer_length_col:
+    answer_length = st.segmented_control(
+        "Answer length",
+        options=["Short Answer", "Detailed Answer"],
+        default="Short Answer",
+        label_visibility="collapsed",
+        key="answer_length",
+        help="Choose how much detail MindHeal should include in new replies.",
+    )
+
+if answer_length is None:
+    answer_length = "Short Answer"
+
+
+# ---------------------------------------------------------
 # Previous messages
 # ---------------------------------------------------------
 
@@ -115,7 +152,14 @@ if prompt:
         try:
 
             with st.spinner("Thinking..."):
-                answer, sources, route = respond(prompt)
+                answer, sources, route = respond(
+                    prompt,
+                    response_style=(
+                        "detailed"
+                        if answer_length == "Detailed Answer"
+                        else "short"
+                    ),
+                )
 
         except Exception as e:
 

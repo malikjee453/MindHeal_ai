@@ -2,7 +2,14 @@ from core.groq_client import chat
 from core.prompts import COMPOSER_PROMPT
 
 
-def compose_response(user_text, specialist_analysis, safety_note=""):
+def compose_response(
+    user_text, specialist_analysis, safety_note="", response_style="short"
+):
+
+    if response_style == "detailed":
+        length_guidance = "Aim for 180–280 words. Give a fuller explanation with clear, useful detail, but avoid repetition and unnecessary lists."
+    else:
+        length_guidance = "Aim for 50–90 words. Keep it concise, warm, and useful. Do not exceed 110 words unless the user explicitly asks for more."
 
     prompt = f"""
 User message:
@@ -20,10 +27,7 @@ FINAL RESPONSE STYLE
 
 Write a short, natural conversation.
 
-Aim for 70–120 words.
-
-Do not exceed 140 words unless the user explicitly asks for
-detailed information.
+{length_guidance}
 
 The answer should feel like a thoughtful conversation with a
 knowledgeable, emotionally intelligent friend.
