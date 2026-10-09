@@ -3,7 +3,8 @@ from core.prompts import COMPOSER_PROMPT
 
 
 def compose_response(
-    user_text, specialist_analysis, safety_note="", response_style="short"
+    user_text, specialist_analysis, safety_note="", response_style="short",
+    response_language="English",
 ):
 
     if response_style == "detailed":
@@ -12,6 +13,13 @@ def compose_response(
         length_guidance = "Aim for 50–90 words. Keep it concise, warm, and useful. Do not exceed 110 words unless the user explicitly asks for more."
 
     prompt = f"""
+Selected response language: {response_language}
+
+Language instruction:
+- If selected response language is English, write the final answer in English.
+- If selected response language is Urdu, write the entire final answer in natural Pakistani Urdu script.
+- When Urdu is selected, do not use Hindi or Devanagari characters.
+
 User message:
 {user_text}
 

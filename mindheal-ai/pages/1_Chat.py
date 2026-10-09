@@ -101,6 +101,19 @@ with answer_length_col:
 if answer_length is None:
     answer_length = "Short Answer"
 
+# Language selector directly under answer length.
+language_col_left, language_col, language_col_right = st.columns([1, 2, 1])
+with language_col:
+    language_options = ["English", "Urdu"]
+    current_language = st.session_state.get("language", "English")
+    if current_language not in language_options:
+        current_language = "English"
+    st.session_state.language = st.selectbox(
+        "Response language",
+        options=language_options,
+        index=language_options.index(current_language),
+        key="chat_response_language",
+    )
 
 # ---------------------------------------------------------
 # Previous messages
@@ -159,6 +172,7 @@ if prompt:
                         if answer_length == "Detailed Answer"
                         else "short"
                     ),
+                    response_language=st.session_state.language,
                 )
 
         except Exception as e:
