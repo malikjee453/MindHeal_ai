@@ -31,7 +31,9 @@ h1, h2, h3, h4, h5, h6,
 
     @font-face {
         font-family: "JameelNooriNastaleeq";
-        src: url("/app/static/JameelNooriNastaleeq.ttf?v=2") format("truetype");
+        src:
+            url("https://raw.githubusercontent.com/malikjee453/MindHeal_ai/main/mindheal-ai/static/JameelNooriNastaleeq.ttf") format("truetype"),
+            url("/app/static/JameelNooriNastaleeq.ttf?v=3") format("truetype");
         font-weight: 400;
         font-style: normal;
         font-display: swap;
