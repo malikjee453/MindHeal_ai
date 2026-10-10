@@ -87,9 +87,10 @@ if memory.configured() and not memory.logged_in():
             if login_submit:
                 ok, data = memory.sign_in(login_email, login_password)
                 if ok:
-                    st.session_state.mindheal_access_token = data.get("access_token")
-                    st.session_state.mindheal_refresh_token = data.get("refresh_token")
-                    st.session_state.mindheal_user_id = (data.get("user") or {}).get("id")
+                    auth_session = memory.session_parts(data)
+                    st.session_state.mindheal_access_token = auth_session["access_token"]
+                    st.session_state.mindheal_refresh_token = auth_session["refresh_token"]
+                    st.session_state.mindheal_user_id = auth_session["user_id"]
                     st.session_state.mindheal_email = login_email.strip()
                     if st.session_state.mindheal_access_token and st.session_state.mindheal_user_id:
                         profile = memory.load_profile() or {}
@@ -114,10 +115,11 @@ if memory.configured() and not memory.logged_in():
                 else:
                     ok, data = memory.sign_up(signup_email, signup_password)
                     if ok:
-                        if data.get("access_token") and (data.get("user") or {}).get("id"):
-                            st.session_state.mindheal_access_token = data.get("access_token")
-                            st.session_state.mindheal_refresh_token = data.get("refresh_token")
-                            st.session_state.mindheal_user_id = data["user"]["id"]
+                        auth_session = memory.session_parts(data)
+                        if auth_session["access_token"] and auth_session["user_id"]:
+                            st.session_state.mindheal_access_token = auth_session["access_token"]
+                            st.session_state.mindheal_refresh_token = auth_session["refresh_token"]
+                            st.session_state.mindheal_user_id = auth_session["user_id"]
                             st.session_state.mindheal_email = signup_email.strip()
                             st.session_state.mindheal_memory_enabled = False
                             memory.save_profile(display_name="", memory_enabled=False, memory_summary="")
