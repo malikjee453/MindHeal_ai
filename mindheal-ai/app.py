@@ -6,6 +6,7 @@ from core.ui import render_disclaimer
 from core.visitor_counter import (
     register_visitor,
     render_visitor_gauge,
+    render_visitor_diagnostic,
 )
 from core.world_clock import render_world_clock
 
