@@ -146,33 +146,30 @@ st.markdown(
 )
 
 
-left_space, answer_length_col, right_space = st.columns([1, 2, 1])
-with answer_length_col:
-    answer_length = st.segmented_control(
-        "Answer length",
-        options=["Short Answer", "Detailed Answer"],
-        default="Short Answer",
-        label_visibility="collapsed",
-        key="answer_length",
-        help="Choose how much detail MindHeal should include in new replies.",
-    )
+# Keep answer controls left-aligned with the main page title.
+answer_length = st.segmented_control(
+    "Answer length",
+    options=["Short Answer", "Detailed Answer"],
+    default="Short Answer",
+    label_visibility="collapsed",
+    key="answer_length",
+    help="Choose how much detail MindHeal should include in new replies.",
+)
 
 if answer_length is None:
     answer_length = "Short Answer"
 
-# Language selector directly under answer length.
-language_col_left, language_col, language_col_right = st.columns([1, 2, 1])
-with language_col:
-    language_options = ["English", "Urdu"]
-    current_language = st.session_state.get("language", "English")
-    if current_language not in language_options:
-        current_language = "English"
-    st.session_state.language = st.selectbox(
-        "Response language",
-        options=language_options,
-        index=language_options.index(current_language),
-        key="chat_response_language",
-    )
+# Language selector directly below the answer-length tabs, left-aligned.
+language_options = ["English", "Urdu"]
+current_language = st.session_state.get("language", "English")
+if current_language not in language_options:
+    current_language = "English"
+st.session_state.language = st.selectbox(
+    "Response language",
+    options=language_options,
+    index=language_options.index(current_language),
+    key="chat_response_language",
+)
 
 # ---------------------------------------------------------
 # Previous messages
