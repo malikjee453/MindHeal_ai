@@ -86,20 +86,52 @@ render_header(
 st.markdown(
     """
     <style>
+    /* Use MindHeal's normal green for the answer-length selector. */
     div[data-testid="stSegmentedControl"] button {
+        color: #2F7655 !important;
+        border-color: #2F7655 !important;
         min-height: 30px !important;
         padding: 3px 11px !important;
         font-size: 0.82rem !important;
         line-height: 1.1 !important;
     }
+    div[data-testid="stSegmentedControl"] button[aria-pressed="true"] {
+        background: #2F7655 !important;
+        color: #FFFFFF !important;
+        border-color: #2F7655 !important;
+    }
+    div[data-testid="stSegmentedControl"] button:hover {
+        border-color: #245C42 !important;
+        color: #245C42 !important;
+    }
+    div[data-testid="stSegmentedControl"] button[aria-pressed="true"]:hover {
+        background: #245C42 !important;
+        color: #FFFFFF !important;
+    }
     div[data-testid="stSegmentedControl"] [data-testid="stMarkdownContainer"] p {
         font-size: 0.82rem !important;
         margin: 0 !important;
+    }
+
+    /* Clearly outline the chat input box. */
+    [data-testid="stChatInput"] {
+        border: 1.5px solid #2F7655 !important;
+        border-radius: 12px !important;
+        box-shadow: none !important;
+    }
+    [data-testid="stChatInput"]:focus-within {
+        border: 2px solid #2F7655 !important;
+        box-shadow: 0 0 0 2px rgba(47, 118, 85, 0.12) !important;
+    }
+    [data-testid="stChatInput"] textarea {
+        border: none !important;
+        box-shadow: none !important;
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
+
 
 left_space, answer_length_col, right_space = st.columns([1, 2, 1])
 with answer_length_col:
