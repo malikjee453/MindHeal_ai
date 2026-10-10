@@ -58,11 +58,15 @@ else:
             memory.clear_memory()
             st.success("Saved conversation turns and summary deleted.")
     with c2:
-        if st.button("Sign out", use_container_width=True):
-            for key in ("mindheal_access_token", "mindheal_refresh_token", "mindheal_user_id", "mindheal_email", "mindheal_memory_enabled"):
-                st.session_state.pop(key, None)
-            st.success("You have been signed out.")
+        if st.button("Delete progress history", use_container_width=True):
+            memory.clear_progress()
+            st.success("Your saved progress check-ins have been deleted.")
             st.rerun()
+    if st.button("Sign out", use_container_width=True):
+        for key in ("mindheal_access_token", "mindheal_refresh_token", "mindheal_user_id", "mindheal_email", "mindheal_memory_enabled"):
+            st.session_state.pop(key, None)
+        st.success("You have been signed out.")
+        st.rerun()
 
 st.divider()
 st.subheader("Optional progress check-in")
