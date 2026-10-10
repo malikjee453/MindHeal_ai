@@ -3,7 +3,6 @@ from typing import List, Dict, Tuple
 
 import faiss
 import numpy as np
-from sentence_transformers import SentenceTransformer
 
 from core.config import EMBEDDING_MODEL, INDEX_DIR
 
@@ -19,6 +18,9 @@ def get_embedding_model():
     global _embedding_model
 
     if _embedding_model is None:
+        # Import the heavyweight ML stack only when semantic search or PDF ingestion
+        # actually needs embeddings. This keeps ordinary chat startup lighter.
+        from sentence_transformers import SentenceTransformer
         _embedding_model = SentenceTransformer(EMBEDDING_MODEL)
 
     return _embedding_model
