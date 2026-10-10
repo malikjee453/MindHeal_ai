@@ -86,27 +86,40 @@ render_header(
 st.markdown(
     """
     <style>
-    /* Use MindHeal's normal green for the answer-length selector. */
-    div[data-testid="stSegmentedControl"] button {
+    /* Force the answer-length segmented control to use MindHeal green,
+       overriding Streamlit's default red primary theme. */
+    div[data-testid="stSegmentedControl"] button,
+    div[data-testid="stSegmentedControl"] button *,
+    div[data-testid="stSegmentedControl"] [role="radio"],
+    div[data-testid="stSegmentedControl"] [role="radio"] * {
         color: #2F7655 !important;
         border-color: #2F7655 !important;
         min-height: 30px !important;
-        padding: 3px 11px !important;
+        padding-top: 3px !important;
+        padding-bottom: 3px !important;
         font-size: 0.82rem !important;
         line-height: 1.1 !important;
+        --primary-color: #2F7655 !important;
+        --primary-color-light: #E8F1EC !important;
     }
-    div[data-testid="stSegmentedControl"] button[aria-pressed="true"] {
+    div[data-testid="stSegmentedControl"] button[aria-pressed="true"],
+    div[data-testid="stSegmentedControl"] button[aria-checked="true"],
+    div[data-testid="stSegmentedControl"] button[data-checked="true"],
+    div[data-testid="stSegmentedControl"] [role="radio"][aria-checked="true"] {
         background: #2F7655 !important;
         color: #FFFFFF !important;
         border-color: #2F7655 !important;
     }
-    div[data-testid="stSegmentedControl"] button:hover {
+    div[data-testid="stSegmentedControl"] button[aria-pressed="true"] *,
+    div[data-testid="stSegmentedControl"] button[aria-checked="true"] *,
+    div[data-testid="stSegmentedControl"] button[data-checked="true"] *,
+    div[data-testid="stSegmentedControl"] [role="radio"][aria-checked="true"] * {
+        color: #FFFFFF !important;
+    }
+    div[data-testid="stSegmentedControl"] button:hover,
+    div[data-testid="stSegmentedControl"] [role="radio"]:hover {
         border-color: #245C42 !important;
         color: #245C42 !important;
-    }
-    div[data-testid="stSegmentedControl"] button[aria-pressed="true"]:hover {
-        background: #245C42 !important;
-        color: #FFFFFF !important;
     }
     div[data-testid="stSegmentedControl"] [data-testid="stMarkdownContainer"] p {
         font-size: 0.82rem !important;
