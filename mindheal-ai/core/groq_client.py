@@ -14,3 +14,14 @@ def chat(messages, temperature=0.7, **kwargs):
     )
 
     return response.choices[0].message.content
+
+
+def transcribe_audio(audio_bytes, filename="voice_input.wav"):
+    """Transcribe a short voice recording with Groq Whisper."""
+    response = client.audio.transcriptions.create(
+        file=(filename, audio_bytes),
+        model="whisper-large-v3",
+        response_format="json",
+    )
+    return (getattr(response, "text", "") or "").strip()
+
