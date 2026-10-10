@@ -338,8 +338,6 @@ with st.expander("🎙️ Talk instead of typing", expanded=False):
                 voice_prompt = st.session_state.get("mindheal_voice_transcript", "").strip()
                 if voice_prompt:
                     st.session_state["_mindheal_voice_prompt_pending"] = voice_prompt
-                    st.session_state["mindheal_voice_transcript"] = ""
-                    st.session_state.pop("_mindheal_voice_audio_hash", None)
                     st.session_state.pop("mindheal_voice_transcription_error", None)
                     st.rerun()
                 else:
