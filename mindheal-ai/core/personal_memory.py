@@ -40,6 +40,17 @@ def sign_up(email, password):
 def sign_in(email, password):
     return _auth_request("token?grant_type=password", {"email": email.strip(), "password": password})
 
+def session_parts(data):
+    """Normalize Supabase Auth responses across signup/sign-in response shapes."""
+    data = data or {}
+    session = data.get("session") or {}
+    user = data.get("user") or data
+    return {
+        "access_token": data.get("access_token") or session.get("access_token"),
+        "refresh_token": data.get("refresh_token") or session.get("refresh_token"),
+        "user_id": user.get("id") if isinstance(user, dict) else None,
+    }
+
 def _headers():
     url, key = _config()
     token = st.session_state.get("mindheal_access_token")
