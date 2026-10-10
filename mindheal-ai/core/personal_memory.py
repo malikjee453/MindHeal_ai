@@ -110,3 +110,6 @@ def get_progress(limit=30):
 def clear_memory():
     db_request("mindheal_turns", method="DELETE", params={"user_id":f"eq.{user_id()}"})
     save_profile(memory_summary="")
+
+def clear_progress():
+    db_request("mindheal_progress", method="DELETE", params={"user_id":f"eq.{user_id()}"})
