@@ -76,8 +76,8 @@ init_session()
 
 # General chat is available without an account. Saving memory is optional.
 if not memory.logged_in():
-    with st.expander("Optional: save your progress with a nickname and password", expanded=True):
-        st.caption("Chat without an account if you prefer. Create a private account only if you want saved memory and progress. No email address is requested.")
+    st.subheader("Optional private account")
+    st.caption("General chat works without an account. Create a nickname and password only if you want to save memory and progress. No email address is requested.")
         if not memory.configured():
             st.warning("Private accounts need Supabase credentials. General chat still works without them.")
             st.code('SUPABASE_URL = "https://YOUR_PROJECT_REF.supabase.co"\nSUPABASE_ANON_KEY = "YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY"', language="toml")
