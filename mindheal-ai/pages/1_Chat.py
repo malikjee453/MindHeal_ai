@@ -31,14 +31,14 @@ h1, h2, h3, h4, h5, h6,
 
     @font-face {
         font-family: "JameelNooriNastaleeq";
-        src: url("/app/static/JameelNooriNastaleeq.ttf")
-             format("truetype");
-        font-weight: normal;
+        src: url("/app/static/JameelNooriNastaleeq.ttf?v=2") format("truetype");
+        font-weight: 400;
         font-style: normal;
+        font-display: swap;
     }
 
     .urdu-response {
-        font-family: "JameelNooriNastaleeq", serif !important;
+        font-family: "JameelNooriNastaleeq", "Jameel Noori Nastaleeq", serif !important;
         direction: rtl !important;
         text-align: right !important;
         font-size: 24px !important;
@@ -47,7 +47,7 @@ h1, h2, h3, h4, h5, h6,
     }
 
     .urdu-response * {
-        font-family: "JameelNooriNastaleeq", serif !important;
+        font-family: "JameelNooriNastaleeq", "Jameel Noori Nastaleeq", serif !important;
     }
 
     </style>
