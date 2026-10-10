@@ -76,7 +76,7 @@ init_session()
 
 # Private account sign-in. Show setup guidance when secrets are missing.
 if not memory.logged_in():
-    with st.expander("Sign in / Create account for background memory", expanded=not memory.configured()):
+    with st.expander("Sign in / Create account for background memory", expanded=True):
         if not memory.configured():
             st.warning("Account sign-in is currently unavailable because Supabase credentials are missing.")
             st.markdown("In Streamlit Cloud, open **App settings → Secrets** and add:")
