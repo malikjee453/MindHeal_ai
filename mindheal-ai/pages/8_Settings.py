@@ -34,7 +34,7 @@ st.caption("Memory is optional. Your saved conversations and progress are tied t
 if not memory.configured():
     st.warning("Account storage is not configured yet. Add SUPABASE_URL and SUPABASE_ANON_KEY to Streamlit Cloud Secrets, then run the SQL in supabase_mindheal_memory.sql in your Supabase SQL Editor.")
 elif not memory.logged_in():
-    st.info("Sign in or create an account from the Chat page to manage private memory.")
+    st.info("Sign in or create a nickname-and-password account from the Chat page to manage private memory.")
 else:
     profile = memory.load_profile() or {}
     with st.form("profile_form"):
@@ -63,7 +63,7 @@ else:
             st.success("Your saved progress check-ins have been deleted.")
             st.rerun()
     if st.button("Sign out", use_container_width=True):
-        for key in ("mindheal_access_token", "mindheal_refresh_token", "mindheal_user_id", "mindheal_email", "mindheal_memory_enabled"):
+        for key in ("mindheal_access_token", "mindheal_refresh_token", "mindheal_user_id", "mindheal_email", "mindheal_nickname", "mindheal_memory_enabled"):
             st.session_state.pop(key, None)
         st.success("You have been signed out.")
         st.rerun()
