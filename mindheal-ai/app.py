@@ -391,6 +391,8 @@ if visitor_count is not None:
         visitor_count,
         maximum=100000,
     )
+else:
+    render_visitor_diagnostic()
 
 
 # =========================================================
