@@ -74,71 +74,97 @@ def contains_urdu(text):
 
 init_session()
 
-# General chat is available without an account. Saving memory is optional.
+# General chat works without an account. Saving memory is optional.
 if not memory.logged_in():
     st.subheader("Optional private account")
-    st.caption("General chat works without an account. Create a nickname and password only if you want to save memory and progress. No email address is requested.")
-        if not memory.configured():
-            st.warning("Private accounts need Supabase credentials. General chat still works without them.")
-            st.code('SUPABASE_URL = "https://YOUR_PROJECT_REF.supabase.co"\nSUPABASE_ANON_KEY = "YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY"', language="toml")
-        else:
-            login_tab, signup_tab = st.tabs(["Sign in", "Create account"])
-            with login_tab:
-                with st.form("mindheal_login_form"):
-                    login_nickname = st.text_input("Nickname", key="mh_login_nickname", max_chars=24)
-                    login_password = st.text_input("Password", type="password", key="mh_login_password")
-                    login_submit = st.form_submit_button("Sign in", type="primary")
-                if login_submit:
-                    ok, data = memory.sign_in(login_nickname, login_password)
+    st.caption(
+        "General chat works without an account. Create a nickname and password "
+        "only if you want to save memory and progress. No email address is requested."
+    )
+    if not memory.configured():
+        st.warning("Private accounts need Supabase credentials. General chat still works without them.")
+        st.code(
+            'SUPABASE_URL = "https://YOUR_PROJECT_REF.supabase.co"\n'
+            'SUPABASE_ANON_KEY = "YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY"',
+            language="toml",
+        )
+    else:
+        login_tab, signup_tab = st.tabs(["Sign in", "Create account"])
+        with login_tab:
+            with st.form("mindheal_login_form"):
+                login_nickname = st.text_input("Nickname", key="mh_login_nickname", max_chars=24)
+                login_password = st.text_input("Password", type="password", key="mh_login_password")
+                login_submit = st.form_submit_button("Sign in", type="primary")
+            if login_submit:
+                ok, data = memory.sign_in(login_nickname, login_password)
+                if ok:
+                    auth_session = memory.session_parts(data)
+                    st.session_state.mindheal_access_token = auth_session["access_token"]
+                    st.session_state.mindheal_refresh_token = auth_session["refresh_token"]
+                    st.session_state.mindheal_user_id = auth_session["user_id"]
+                    st.session_state.mindheal_nickname = login_nickname.strip()
+                    if st.session_state.mindheal_access_token and st.session_state.mindheal_user_id:
+                        profile = memory.load_profile() or {}
+                        st.session_state.mindheal_memory_enabled = bool(profile.get("memory_enabled", False))
+                        st.success("Signed in. Background memory is still off until you enable it in Settings.")
+                        st.rerun()
+                    else:
+                        st.error("Sign-in did not return a session. Check Supabase Auth settings.")
+                else:
+                    st.error(str(data))
+        with signup_tab:
+            with st.form("mindheal_signup_form"):
+                signup_nickname = st.text_input(
+                    "Choose a nickname (3–24 letters, numbers, underscores)",
+                    key="mh_signup_nickname",
+                    max_chars=24,
+                )
+                signup_password = st.text_input(
+                    "Create password (at least 8 characters)",
+                    type="password",
+                    key="mh_signup_password",
+                )
+                signup_confirm = st.text_input(
+                    "Confirm password", type="password", key="mh_signup_confirm"
+                )
+                signup_submit = st.form_submit_button("Create account")
+            if signup_submit:
+                if signup_password != signup_confirm:
+                    st.error("The passwords do not match.")
+                elif len(signup_password) < 8:
+                    st.error("Please use a password with at least 8 characters.")
+                elif not signup_nickname.strip():
+                    st.error("Please choose a nickname.")
+                else:
+                    ok, data = memory.sign_up(signup_nickname, signup_password)
                     if ok:
                         auth_session = memory.session_parts(data)
-                        st.session_state.mindheal_access_token = auth_session["access_token"]
-                        st.session_state.mindheal_refresh_token = auth_session["refresh_token"]
-                        st.session_state.mindheal_user_id = auth_session["user_id"]
-                        st.session_state.mindheal_nickname = login_nickname.strip()
-                        if st.session_state.mindheal_access_token and st.session_state.mindheal_user_id:
-                            profile = memory.load_profile() or {}
-                            st.session_state.mindheal_memory_enabled = bool(profile.get("memory_enabled", False))
-                            st.success("Signed in. Background memory is still off until you enable it in Settings.")
+                        if auth_session["access_token"] and auth_session["user_id"]:
+                            st.session_state.mindheal_access_token = auth_session["access_token"]
+                            st.session_state.mindheal_refresh_token = auth_session["refresh_token"]
+                            st.session_state.mindheal_user_id = auth_session["user_id"]
+                            st.session_state.mindheal_nickname = signup_nickname.strip()
+                            st.session_state.mindheal_memory_enabled = False
+                            memory.save_profile(
+                                display_name=signup_nickname.strip(),
+                                memory_enabled=False,
+                                memory_summary="",
+                            )
+                            st.success("Account created. Memory is off by default; enable it in Settings when ready.")
                             st.rerun()
                         else:
-                            st.error("Sign-in did not return a session. Check Supabase Auth settings.")
+                            st.error(
+                                "Supabase did not return a session. In Supabase Auth settings, "
+                                "disable email confirmations because no real email is collected."
+                            )
                     else:
                         st.error(str(data))
-            with signup_tab:
-                with st.form("mindheal_signup_form"):
-                    signup_nickname = st.text_input("Choose a nickname (3–24 letters, numbers, underscores)", key="mh_signup_nickname", max_chars=24)
-                    signup_password = st.text_input("Create password (at least 8 characters)", type="password", key="mh_signup_password")
-                    signup_confirm = st.text_input("Confirm password", type="password", key="mh_signup_confirm")
-                    signup_submit = st.form_submit_button("Create account")
-                if signup_submit:
-                    if signup_password != signup_confirm:
-                        st.error("The passwords do not match.")
-                    elif len(signup_password) < 8:
-                        st.error("Please use a password with at least 8 characters.")
-                    elif not signup_nickname.strip():
-                        st.error("Please choose a nickname.")
-                    else:
-                        ok, data = memory.sign_up(signup_nickname, signup_password)
-                        if ok:
-                            auth_session = memory.session_parts(data)
-                            if auth_session["access_token"] and auth_session["user_id"]:
-                                st.session_state.mindheal_access_token = auth_session["access_token"]
-                                st.session_state.mindheal_refresh_token = auth_session["refresh_token"]
-                                st.session_state.mindheal_user_id = auth_session["user_id"]
-                                st.session_state.mindheal_nickname = signup_nickname.strip()
-                                st.session_state.mindheal_memory_enabled = False
-                                memory.save_profile(display_name=signup_nickname.strip(), memory_enabled=False, memory_summary="")
-                                st.success("Account created. Memory is off by default; enable it in Settings when ready.")
-                                st.rerun()
-                            else:
-                                st.error("Supabase did not return a session. In Supabase Auth settings, disable email confirmations because no real email is collected.")
-                        else:
-                            st.error(str(data))
 elif memory.logged_in():
     account_profile = memory.load_profile() or {}
     account_nickname = st.session_state.get("mindheal_nickname") or account_profile.get("display_name", "")
-    st.caption("Private account" + (f" · {account_nickname}" if account_nickname else "") + (" · background memory on" if account_profile.get("memory_enabled") else " · background memory off"))
+    memory_status = "on" if account_profile.get("memory_enabled") else "off"
+    st.caption(f"Private account · {account_nickname or 'signed in'} · background memory {memory_status}")
+
 
 render_header(
     "MindHeal AI",
