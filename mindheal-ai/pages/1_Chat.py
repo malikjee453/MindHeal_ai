@@ -13,6 +13,20 @@ st.markdown(
     """
     <style>
 
+/* Match the Chat page heading to the main MindHeal title color. */
+h1, h2, h3, h4, h5, h6,
+[data-testid="stHeading"] h1,
+[data-testid="stHeading"] h2,
+[data-testid="stHeading"] h3,
+[data-testid="stHeading"] h4,
+[data-testid="stHeading"] h5,
+[data-testid="stHeading"] h6,
+.stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
+.stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
+    color: #173B2D !important;
+    -webkit-text-fill-color: #173B2D !important;
+}
+
     @font-face {
         font-family: "JameelNooriNastaleeq";
         src: url("/app/static/JameelNooriNastaleeq.ttf")
