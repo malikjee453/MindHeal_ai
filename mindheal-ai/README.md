@@ -20,7 +20,7 @@ The repository contains one top-level project folder, `mindheal-ai/`. Folders su
 
 ## Private background memory and progress tracking
 
-To enable email/password accounts and opt-in memory:
+To enable nickname/password accounts and opt-in memory:
 
 1. In Supabase, open **SQL Editor** and run the complete script in `supabase_mindheal_memory.sql`.
 2. In Streamlit Cloud, open the app's **Settings → Secrets** and add:
@@ -29,7 +29,7 @@ To enable email/password accounts and opt-in memory:
    SUPABASE_ANON_KEY = "YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY"
    ```
    Use the project's publishable/anon key only; **never put a service-role key in Streamlit secrets or client code**.
-3. Reboot the Streamlit app. Users can create an account or sign in on the Chat page.
+3. Reboot the Streamlit app. Users can create a nickname/password account or sign in on the Chat page.
 4. Memory is **off by default**. A signed-in user must turn on **Enable background memory** in Settings to save conversation turns and background summaries. The Settings page also supports deleting saved conversation memory and progress check-ins.
 5. Progress check-ins are optional and user-entered. The app compares self-reported mood and stress ratings over time; these are not diagnoses or objective measures of mental health.
 
