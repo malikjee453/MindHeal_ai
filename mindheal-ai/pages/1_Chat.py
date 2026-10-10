@@ -361,8 +361,8 @@ if prompt:
     if memory.logged_in() and st.session_state.get("mindheal_memory_enabled"):
         memory.save_turn("user", prompt)
         memory.save_turn("assistant", answer)
-        saved = memory.recent_turns(limit=12)
-        if len(saved) >= 6 and len(saved) % 6 < 2:
+        saved = memory.recent_turns(limit=120)
+        if len(saved) >= 6 and len(saved) % 6 == 0:
             profile = memory.load_profile() or {}
             transcript = "\n".join(f"{row['role']}: {row['content']}" for row in saved[-12:])
             try:
