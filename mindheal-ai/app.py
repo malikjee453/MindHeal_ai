@@ -148,10 +148,10 @@ st.markdown(
             Arial,
             sans-serif;
 
-        font-size: 2.15rem;
-        font-weight: 800;
+        font-size: 2.00rem;
+        font-weight: 500;
         letter-spacing: -1px;
-        line-height: 1.25;
+        line-height: 1.00;
 
         background: linear-gradient(
             135deg,
