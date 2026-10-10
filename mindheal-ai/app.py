@@ -46,6 +46,20 @@ st.markdown(
        TEXT
        ===================================================== */
 
+    /* Keep every page title and heading in the same deep green as the main brand title. */
+    h1, h2, h3, h4, h5, h6,
+    [data-testid="stHeading"] h1,
+    [data-testid="stHeading"] h2,
+    [data-testid="stHeading"] h3,
+    [data-testid="stHeading"] h4,
+    [data-testid="stHeading"] h5,
+    [data-testid="stHeading"] h6,
+    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
+    .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
+        color: #173B2D !important;
+        -webkit-text-fill-color: #173B2D !important;
+    }
+
     .stMarkdown p,
     .stMarkdown li {
         color: #33483d !important;
@@ -148,10 +162,10 @@ st.markdown(
             Arial,
             sans-serif;
 
-        font-size: 2.00rem;
-        font-weight: 500;
+        font-size: 2.15rem;
+        font-weight: 800;
         letter-spacing: -1px;
-        line-height: 1.00;
+        line-height: 1.25;
 
         background: linear-gradient(
             135deg,
