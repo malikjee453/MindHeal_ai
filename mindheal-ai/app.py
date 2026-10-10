@@ -356,7 +356,7 @@ with c2:
 
     st.markdown(
         '<div class="mb-feature-text">'
-        'Overcome all your Fears.'
+        'explore all your Fears and Overcome.'
         '</div>',
         unsafe_allow_html=True,
     )
@@ -370,7 +370,7 @@ with c3:
 
     st.markdown(
         '<div class="mb-feature-text">'
-        'Upload pdf and ask questions from them '
+        'Upload pdf and ask questions from it. '
         '</div>',
         unsafe_allow_html=True,
     )
