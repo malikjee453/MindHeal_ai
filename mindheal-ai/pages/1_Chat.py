@@ -4,7 +4,7 @@ from agents.orchestrator import respond
 from core.session import init_session
 from core.ui import render_header
 from core import personal_memory as memory
-from core.groq_client import chat as llm_chat
+from core.groq_client import chat as llm_chat, transcribe_audio
 
 
 # =========================================================
@@ -298,11 +298,60 @@ for message in st.session_state.messages:
 
 
 # ---------------------------------------------------------
+# Voice input
+# ---------------------------------------------------------
+
+with st.expander("🎙️ Talk instead of typing", expanded=False):
+    st.caption("Allow microphone access, record your message, then review the transcript before sending.")
+    voice_audio = st.audio_input("Record a voice message", key="mindheal_voice_recording")
+
+    if voice_audio is not None:
+        import hashlib
+
+        audio_bytes = voice_audio.getvalue()
+        audio_hash = hashlib.sha256(audio_bytes).hexdigest()
+
+        if st.session_state.get("_mindheal_voice_audio_hash") != audio_hash:
+            with st.spinner("Transcribing your voice..."):
+                try:
+                    transcript = transcribe_audio(
+                        audio_bytes,
+                        filename=getattr(voice_audio, "name", None) or "voice_input.wav",
+                    )
+                    st.session_state["_mindheal_voice_audio_hash"] = audio_hash
+                    st.session_state["mindheal_voice_transcript"] = transcript
+                    st.session_state["mindheal_voice_transcription_error"] = ""
+                except Exception:
+                    st.session_state["mindheal_voice_transcription_error"] = (
+                        "I couldn't transcribe this recording. Please try again or type your message."
+                    )
+
+        if st.session_state.get("mindheal_voice_transcription_error"):
+            st.warning(st.session_state["mindheal_voice_transcription_error"])
+        elif st.session_state.get("mindheal_voice_transcript"):
+            st.text_area(
+                "Transcript (edit if needed)",
+                key="mindheal_voice_transcript",
+                height=100,
+            )
+            if st.button("Send voice message", type="primary", key="mindheal_send_voice"):
+                voice_prompt = st.session_state.get("mindheal_voice_transcript", "").strip()
+                if voice_prompt:
+                    st.session_state["_mindheal_voice_prompt_pending"] = voice_prompt
+                    st.session_state["mindheal_voice_transcript"] = ""
+                    st.session_state.pop("_mindheal_voice_audio_hash", None)
+                    st.session_state.pop("mindheal_voice_transcription_error", None)
+                    st.rerun()
+                else:
+                    st.info("No speech was detected. Please record again or type your message.")
+
+# ---------------------------------------------------------
 # Chat input
 # ---------------------------------------------------------
 
 prompt = st.chat_input("What's on your mind?")
-
+if st.session_state.get("_mindheal_voice_prompt_pending"):
+    prompt = st.session_state.pop("_mindheal_voice_prompt_pending")
 
 if prompt:
 
