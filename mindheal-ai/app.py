@@ -297,7 +297,7 @@ st.markdown(
     'and evidence-informed self-help.'
     '</div>'
     '<div class="mb-builder">'
-    'Built by: Engr. Mubashir Malik'
+    'By: Engr. Mubashir Malik'
     '</div>',
     unsafe_allow_html=True,
 )
@@ -356,8 +356,7 @@ with c2:
 
     st.markdown(
         '<div class="mb-feature-text">'
-        'Find your discomforts, habits, addictions, and fears '
-        'here and get advice to overcome them.'
+        'Overcome all your Fears.'
         '</div>',
         unsafe_allow_html=True,
     )
@@ -371,8 +370,7 @@ with c3:
 
     st.markdown(
         '<div class="mb-feature-text">'
-        'Upload books and documents and ask questions from them '
-        'for short-term memory.'
+        'Upload pdf and ask questions from them '
         '</div>',
         unsafe_allow_html=True,
     )
