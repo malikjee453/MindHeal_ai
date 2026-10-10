@@ -164,12 +164,16 @@ language_options = ["English", "Urdu"]
 current_language = st.session_state.get("language", "English")
 if current_language not in language_options:
     current_language = "English"
-st.session_state.language = st.selectbox(
-    "Response language",
-    options=language_options,
-    index=language_options.index(current_language),
-    key="chat_response_language",
-)
+# Match the language dropdown width to the answer-length buttons.
+language_col, _language_spacer = st.columns([2, 5], gap="small")
+with language_col:
+    st.session_state.language = st.selectbox(
+        "Response language",
+        options=language_options,
+        index=language_options.index(current_language),
+        key="chat_response_language",
+        label_visibility="visible",
+    )
 
 # ---------------------------------------------------------
 # Previous messages
