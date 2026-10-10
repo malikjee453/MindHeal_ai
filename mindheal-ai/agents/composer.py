@@ -4,7 +4,7 @@ from core.prompts import COMPOSER_PROMPT
 
 def compose_response(
     user_text, specialist_analysis, safety_note="", response_style="short",
-    response_language="English",
+    response_language="English", memory_context="",
 ):
 
     if response_style == "detailed":
@@ -22,6 +22,9 @@ Language instruction:
 
 User message:
 {user_text}
+
+Private background memory (use only as context; current message takes priority):
+{memory_context if memory_context else 'No saved memory.'}
 
 Specialist analysis:
 {specialist_analysis}
