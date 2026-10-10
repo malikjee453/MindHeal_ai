@@ -74,61 +74,67 @@ def contains_urdu(text):
 
 init_session()
 
-# Private account sign-in. Chat still works without an account; persistence is opt-in.
-if memory.configured() and not memory.logged_in():
-    with st.expander("Sign in for private background memory", expanded=False):
-        st.caption("Create a private account to keep your name, opt-in conversation memory, and progress across visits.")
-        login_tab, signup_tab = st.tabs(["Sign in", "Create account"])
-        with login_tab:
-            with st.form("mindheal_login_form"):
-                login_email = st.text_input("Email", key="mh_login_email")
-                login_password = st.text_input("Password", type="password", key="mh_login_password")
-                login_submit = st.form_submit_button("Sign in", type="primary")
-            if login_submit:
-                ok, data = memory.sign_in(login_email, login_password)
-                if ok:
-                    auth_session = memory.session_parts(data)
-                    st.session_state.mindheal_access_token = auth_session["access_token"]
-                    st.session_state.mindheal_refresh_token = auth_session["refresh_token"]
-                    st.session_state.mindheal_user_id = auth_session["user_id"]
-                    st.session_state.mindheal_email = login_email.strip()
-                    if st.session_state.mindheal_access_token and st.session_state.mindheal_user_id:
-                        profile = memory.load_profile() or {}
-                        st.session_state.mindheal_memory_enabled = bool(profile.get("memory_enabled", False))
-                        st.success("Signed in. Background memory remains off until you enable it in Settings.")
-                        st.rerun()
-                    else:
-                        st.error("Sign-in returned no session. Please try again.")
-                else:
-                    st.error(str(data))
-        with signup_tab:
-            with st.form("mindheal_signup_form"):
-                signup_email = st.text_input("Email address", key="mh_signup_email")
-                signup_password = st.text_input("Password (at least 8 characters)", type="password", key="mh_signup_password")
-                signup_confirm = st.text_input("Confirm password", type="password", key="mh_signup_confirm")
-                signup_submit = st.form_submit_button("Create account")
-            if signup_submit:
-                if signup_password != signup_confirm:
-                    st.error("The passwords do not match.")
-                elif len(signup_password) < 8:
-                    st.error("Please use a password with at least 8 characters.")
-                else:
-                    ok, data = memory.sign_up(signup_email, signup_password)
+# Private account sign-in. Show setup guidance when secrets are missing.
+if not memory.logged_in():
+    with st.expander("Sign in / Create account for background memory", expanded=not memory.configured()):
+        if not memory.configured():
+            st.warning("Account sign-in is currently unavailable because Supabase credentials are missing.")
+            st.markdown("In Streamlit Cloud, open **App settings → Secrets** and add:")
+            st.code('SUPABASE_URL = "https://YOUR_PROJECT_REF.supabase.co"\nSUPABASE_ANON_KEY = "YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY"', language="toml")
+            st.caption("Save the secrets, then reboot the app. Use the publishable/anon key, never the service-role key.")
+        else:
+            st.caption("Create a private account to keep your name, opt-in conversation memory, and progress across visits.")
+            login_tab, signup_tab = st.tabs(["Sign in", "Create account"])
+            with login_tab:
+                with st.form("mindheal_login_form"):
+                    login_email = st.text_input("Email", key="mh_login_email")
+                    login_password = st.text_input("Password", type="password", key="mh_login_password")
+                    login_submit = st.form_submit_button("Sign in", type="primary")
+                if login_submit:
+                    ok, data = memory.sign_in(login_email, login_password)
                     if ok:
                         auth_session = memory.session_parts(data)
-                        if auth_session["access_token"] and auth_session["user_id"]:
-                            st.session_state.mindheal_access_token = auth_session["access_token"]
-                            st.session_state.mindheal_refresh_token = auth_session["refresh_token"]
-                            st.session_state.mindheal_user_id = auth_session["user_id"]
-                            st.session_state.mindheal_email = signup_email.strip()
-                            st.session_state.mindheal_memory_enabled = False
-                            memory.save_profile(display_name="", memory_enabled=False, memory_summary="")
-                            st.success("Account created. Memory is off by default; enable it in Settings when ready.")
+                        st.session_state.mindheal_access_token = auth_session["access_token"]
+                        st.session_state.mindheal_refresh_token = auth_session["refresh_token"]
+                        st.session_state.mindheal_user_id = auth_session["user_id"]
+                        st.session_state.mindheal_email = login_email.strip()
+                        if st.session_state.mindheal_access_token and st.session_state.mindheal_user_id:
+                            profile = memory.load_profile() or {}
+                            st.session_state.mindheal_memory_enabled = bool(profile.get("memory_enabled", False))
+                            st.success("Signed in. Background memory remains off until you enable it in Settings.")
                             st.rerun()
                         else:
-                            st.success("Account request received. Check your email to confirm the account, then sign in here.")
+                            st.error("Sign-in returned no session. Please try again.")
                     else:
                         st.error(str(data))
+            with signup_tab:
+                with st.form("mindheal_signup_form"):
+                    signup_email = st.text_input("Email address", key="mh_signup_email")
+                    signup_password = st.text_input("Password (at least 8 characters)", type="password", key="mh_signup_password")
+                    signup_confirm = st.text_input("Confirm password", type="password", key="mh_signup_confirm")
+                    signup_submit = st.form_submit_button("Create account")
+                if signup_submit:
+                    if signup_password != signup_confirm:
+                        st.error("The passwords do not match.")
+                    elif len(signup_password) < 8:
+                        st.error("Please use a password with at least 8 characters.")
+                    else:
+                        ok, data = memory.sign_up(signup_email, signup_password)
+                        if ok:
+                            auth_session = memory.session_parts(data)
+                            if auth_session["access_token"] and auth_session["user_id"]:
+                                st.session_state.mindheal_access_token = auth_session["access_token"]
+                                st.session_state.mindheal_refresh_token = auth_session["refresh_token"]
+                                st.session_state.mindheal_user_id = auth_session["user_id"]
+                                st.session_state.mindheal_email = signup_email.strip()
+                                st.session_state.mindheal_memory_enabled = False
+                                memory.save_profile(display_name="", memory_enabled=False, memory_summary="")
+                                st.success("Account created. Memory is off by default; enable it in Settings when ready.")
+                                st.rerun()
+                            else:
+                                st.success("Account request received. Check your email to confirm the account, then sign in here.")
+                        else:
+                            st.error(str(data))
 elif memory.logged_in():
     account_profile = memory.load_profile() or {}
     st.caption("Signed in" + (f" as {account_profile.get('display_name')}" if account_profile.get("display_name") else " to your private MindHeal account") + (" · background memory on" if account_profile.get("memory_enabled") else " · background memory off"))
