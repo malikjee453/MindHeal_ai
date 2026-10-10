@@ -29,11 +29,15 @@ def _get_config():
 
 
 def _headers(key):
-    return {
+    headers = {
         "apikey": key,
-        "Authorization": f"Bearer {key}",
         "Content-Type": "application/json",
     }
+    # Legacy anon keys are JWTs and can also be used as the bearer token.
+    # New sb_publishable_* keys are not JWTs; sending them as Bearer can fail JWT validation.
+    if key.count(".") == 2 and not key.startswith("sb_publishable_"):
+        headers["Authorization"] = f"Bearer {key}"
+    return headers
 
 
 def _set_error(message):
