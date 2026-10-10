@@ -1,5 +1,6 @@
 """Opt-in, per-account memory for MindHeal using Supabase Auth + RLS-protected tables."""
 import os
+import re
 import requests
 import streamlit as st
 
@@ -34,11 +35,25 @@ def _auth_request(endpoint, payload):
     except requests.RequestException:
         return False, "Could not reach the account service. Please try again."
 
-def sign_up(email, password):
-    return _auth_request("signup", {"email": email.strip(), "password": password})
+def _nickname_alias(nickname):
+    """Map a nickname to a private Supabase Auth alias so users need no real email."""
+    nickname = (nickname or "").strip().lower()
+    if not re.fullmatch(r"[a-z0-9_]{3,24}", nickname):
+        return None
+    # Reserved .invalid domain: this alias is only an Auth identifier, not a mailbox.
+    return f"{nickname}@mindheal.invalid"
 
-def sign_in(email, password):
-    return _auth_request("token?grant_type=password", {"email": email.strip(), "password": password})
+def sign_up(nickname, password):
+    alias = _nickname_alias(nickname)
+    if not alias:
+        return False, "Use a nickname with 3–24 characters: letters, numbers, or underscores."
+    return _auth_request("signup", {"email": alias, "password": password, "data": {"nickname": nickname.strip()}})
+
+def sign_in(nickname, password):
+    alias = _nickname_alias(nickname)
+    if not alias:
+        return False, "Use the nickname you registered with (3–24 letters, numbers, or underscores)."
+    return _auth_request("token?grant_type=password", {"email": alias, "password": password})
 
 def session_parts(data):
     """Normalize Supabase Auth responses across signup/sign-in response shapes."""
