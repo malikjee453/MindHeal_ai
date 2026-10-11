@@ -143,6 +143,28 @@
         input.value = "";
         input.dataset.clearToken = String(args.clearToken);
       }
+
+      // Speak each newly generated assistant answer once, using the selected language.
+      const speakText = String(args.speakText || "").trim();
+      const speakId = String(args.speakId || "");
+      if (speakText && speakId && input.dataset.lastSpokenId !== speakId) {
+        input.dataset.lastSpokenId = speakId;
+        if ("speechSynthesis" in window && "SpeechSynthesisUtterance" in window) {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(speakText);
+          utterance.lang = args.speakLanguage || language || "en-US";
+          utterance.rate = 0.96;
+          utterance.pitch = 1.0;
+          const voices = window.speechSynthesis.getVoices();
+          const wanted = utterance.lang.toLowerCase();
+          const voice = voices.find(v => v.lang.toLowerCase() === wanted)
+            || voices.find(v => v.lang.toLowerCase().startsWith(wanted.split("-")[0]));
+          if (voice) utterance.voice = voice;
+          window.speechSynthesis.speak(utterance);
+        } else {
+          status.textContent = "Spoken replies are not supported by this browser.";
+        }
+      }
     }
   });
   window.parent.postMessage({isStreamlitMessage:true,type:"streamlit:componentReady",apiVersion:1},"*");
