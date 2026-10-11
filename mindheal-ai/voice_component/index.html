@@ -4,104 +4,134 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
+  * { box-sizing: border-box; }
   html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:transparent; }
-  body { display:flex; align-items:center; justify-content:center; font-family:Arial,sans-serif; }
-  button {
-    width:42px; height:42px; border:0; border-radius:50%;
-    display:flex; align-items:center; justify-content:center;
-    background:transparent; color:#647D73; cursor:pointer; padding:0;
+  body { font-family:Arial,sans-serif; }
+  .composer {
+    width:100%; min-height:58px; display:flex; align-items:center; gap:8px;
+    padding:7px 9px; background:#f0f2f6; border:1px solid #2f7655;
+    border-radius:14px; box-shadow:0 1px 2px rgba(0,0,0,.03);
+  }
+  .mic, .send {
+    flex:0 0 38px; width:38px; height:40px; border:0; border-radius:10px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
     -webkit-tap-highlight-color:transparent;
   }
-  button:hover { background:rgba(47,118,85,.09); }
-  button[aria-pressed="true"] { color:#B42318; background:rgba(180,35,24,.08); }
-  button:focus-visible { outline:2px solid #2F7655; outline-offset:1px; }
+  .mic { color:#647d73; background:transparent; }
+  .mic:hover { background:rgba(47,118,85,.09); }
+  .mic[aria-pressed="true"] { color:#b42318; background:rgba(180,35,24,.10); }
+  .send { color:#8b9d98; background:#e2e6ec; }
+  .send:disabled { opacity:.65; cursor:default; }
+  input {
+    min-width:0; flex:1; width:100%; border:0; outline:0; background:transparent;
+    color:#173b2d; font-size:14px; padding:10px 4px;
+  }
+  input::placeholder { color:#70877f; opacity:1; }
   svg { width:19px; height:19px; }
-  #hint { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+  #status { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
 </style>
 </head>
 <body>
-<button id="mic" type="button" aria-label="Start voice chat" title="Tap once and speak; it sends automatically after you pause" aria-pressed="false">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <rect x="9" y="2" width="6" height="13" rx="3"></rect>
-    <path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"></path>
-  </svg>
-</button>
-<span id="hint" aria-live="polite"></span>
+<form class="composer" id="composer" aria-label="Chat message">
+  <button class="mic" id="mic" type="button" aria-label="Start voice chat" title="Tap and speak; your message sends automatically after a pause" aria-pressed="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="9" y="2" width="6" height="13" rx="3"></rect>
+      <path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"></path>
+    </svg>
+  </button>
+  <input id="message" type="text" autocomplete="off" placeholder="What's on your mind?" aria-label="Your message">
+  <button class="send" id="send" type="submit" aria-label="Send message" title="Send message">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 19V5M5 12l7-7 7 7"></path>
+    </svg>
+  </button>
+</form>
+<div id="status" aria-live="polite"></div>
 <script>
 (function () {
-  const send = (type, extra) => window.parent.postMessage(Object.assign({
-    isStreamlitMessage: true, type: type
-  }, extra || {}), "*");
+  const sendValue = (text) => {
+    const clean = (text || "").trim();
+    if (!clean) return;
+    window.parent.postMessage({
+      isStreamlitMessage: true,
+      type: "streamlit:setComponentValue",
+      value: { text: clean, id: Date.now().toString() }
+    }, "*");
+  };
+  const form = document.getElementById("composer");
+  const input = document.getElementById("message");
+  const mic = document.getElementById("mic");
+  const status = document.getElementById("status");
   let language = "en-US";
   let recognition = null;
   let active = false;
   let finalText = "";
-  let sentThisSession = false;
-  const button = document.getElementById("mic");
-  const hint = document.getElementById("hint");
+  let lastSent = "";
 
   function setActive(on) {
     active = on;
-    button.setAttribute("aria-pressed", on ? "true" : "false");
-    button.setAttribute("aria-label", on ? "Listening; tap to cancel" : "Start voice chat");
-    button.title = on ? "Listening… pause to send automatically, or tap to cancel" : "Tap once and speak; it sends automatically after you pause";
-    hint.textContent = on ? "Listening" : "";
+    mic.setAttribute("aria-pressed", on ? "true" : "false");
+    mic.setAttribute("aria-label", on ? "Listening; tap to cancel" : "Start voice chat");
+    mic.title = on ? "Listening… pause to send automatically, or tap to cancel" : "Tap and speak; your message sends automatically after a pause";
   }
 
-  function startListening() {
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+    lastSent = text;
+    sendValue(text);
+    input.value = "";
+  });
+
+  mic.addEventListener("click", () => {
+    if (active && recognition) {
+      try { recognition.abort(); } catch (_) {}
+      recognition = null;
+      setActive(false);
+      status.textContent = "Voice input cancelled.";
+      return;
+    }
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      hint.textContent = "Speech recognition is not supported in this browser. Try Chrome or Edge.";
-      button.title = hint.textContent;
+      status.textContent = "Speech recognition is not supported here. Try Chrome or Edge.";
       return;
     }
     finalText = "";
-    sentThisSession = false;
     recognition = new SpeechRecognition();
-    recognition.lang = language || "en-US";
+    recognition.lang = language;
     recognition.continuous = false;
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
     recognition.onresult = (event) => {
       let interim = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const text = event.results[i][0] && event.results[i][0].transcript || "";
-        if (event.results[i].isFinal) finalText += text + " ";
-        else interim += text;
+        const phrase = event.results[i][0] && event.results[i][0].transcript || "";
+        if (event.results[i].isFinal) finalText += phrase + " ";
+        else interim += phrase;
       }
-      hint.textContent = interim || finalText || "Listening";
+      status.textContent = interim || finalText || "Listening";
     };
     recognition.onerror = (event) => {
-      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-        hint.textContent = "Allow microphone access in your browser.";
-      } else if (event.error !== "no-speech" && event.error !== "aborted") {
-        hint.textContent = "Voice input error: " + event.error;
-      }
+      status.textContent = event.error === "not-allowed"
+        ? "Please allow microphone access in your browser."
+        : (event.error === "no-speech" || event.error === "aborted" ? "" : "Voice input error: " + event.error);
       setActive(false);
     };
     recognition.onend = () => {
       setActive(false);
       const transcript = finalText.trim();
-      if (!sentThisSession && transcript) {
-        sentThisSession = true;
-        send("streamlit:setComponentValue", { value: transcript });
-      }
       recognition = null;
+      if (transcript) {
+        input.value = "";
+        sendValue(transcript);
+      }
+      status.textContent = "";
     };
     setActive(true);
+    status.textContent = "Listening…";
     try { recognition.start(); }
-    catch (err) { setActive(false); hint.textContent = "Could not start listening. Please try again."; }
-  }
-
-  button.addEventListener("click", () => {
-    if (active && recognition) {
-      // A second tap cancels listening; normal completion happens automatically after silence.
-      try { recognition.abort(); } catch (_) {}
-      setActive(false);
-      recognition = null;
-      return;
-    }
-    startListening();
+    catch (_) { setActive(false); status.textContent = "Could not start listening. Please try again."; }
   });
 
   window.addEventListener("message", (event) => {
@@ -109,10 +139,14 @@
     if (data.type === "streamlit:render") {
       const args = data.args || {};
       language = args.language || "en-US";
+      if (args.clearToken !== undefined && input.dataset.clearToken !== String(args.clearToken)) {
+        input.value = "";
+        input.dataset.clearToken = String(args.clearToken);
+      }
     }
   });
-  send("streamlit:componentReady", { apiVersion: 1 });
-  send("streamlit:setFrameHeight", { height: 44 });
+  window.parent.postMessage({isStreamlitMessage:true,type:"streamlit:componentReady",apiVersion:1},"*");
+  window.parent.postMessage({isStreamlitMessage:true,type:"streamlit:setFrameHeight",height:62},"*");
 })();
 </script>
 </body>
