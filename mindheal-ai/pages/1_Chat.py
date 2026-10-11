@@ -5,6 +5,7 @@ from core.session import init_session
 from core.ui import render_header
 from core import personal_memory as memory
 from core.groq_client import chat as llm_chat, transcribe_audio
+from streamlit_mic_recorder import mic_recorder
 
 
 # =========================================================
@@ -298,56 +299,44 @@ for message in st.session_state.messages:
 
 
 # ---------------------------------------------------------
-# Voice input
+# Chat composer with microphone button
 # ---------------------------------------------------------
 
-with st.expander("🎙️ Talk instead of typing", expanded=False):
-    st.caption("Allow microphone access, record your message, then review the transcript before sending.")
-    voice_audio = st.audio_input("Record a voice message", key="mindheal_voice_recording")
+# Place the microphone directly beside the chat input. When recording stops,
+# transcribe automatically and send the recognized words through the same chat flow.
+input_col, mic_col = st.columns([12, 1], vertical_alignment="bottom", gap="small")
 
-    if voice_audio is not None:
-        import hashlib
+with input_col:
+    prompt = st.chat_input("What's on your mind?")
 
-        audio_bytes = voice_audio.getvalue()
-        audio_hash = hashlib.sha256(audio_bytes).hexdigest()
+with mic_col:
+    voice_audio = mic_recorder(
+        start_prompt="🎙️",
+        stop_prompt="⏹️",
+        just_once=True,
+        use_container_width=True,
+        format="wav",
+        key="mindheal_inline_mic",
+    )
 
-        if st.session_state.get("_mindheal_voice_audio_hash") != audio_hash:
-            with st.spinner("Transcribing your voice..."):
-                try:
-                    transcript = transcribe_audio(
-                        audio_bytes,
-                        filename=getattr(voice_audio, "name", None) or "voice_input.wav",
-                    )
-                    st.session_state["_mindheal_voice_audio_hash"] = audio_hash
-                    st.session_state["mindheal_voice_transcript"] = transcript
-                    st.session_state["mindheal_voice_transcription_error"] = ""
-                except Exception:
-                    st.session_state["mindheal_voice_transcription_error"] = (
-                        "I couldn't transcribe this recording. Please try again or type your message."
-                    )
+if voice_audio and voice_audio.get("bytes"):
+    audio_id = voice_audio.get("id")
+    if st.session_state.get("_mindheal_last_voice_id") != audio_id:
+        st.session_state["_mindheal_last_voice_id"] = audio_id
+        try:
+            with st.spinner("Understanding your voice..."):
+                voice_prompt = transcribe_audio(
+                    voice_audio["bytes"],
+                    filename="voice_input.wav",
+                )
+            if voice_prompt:
+                st.session_state["_mindheal_voice_prompt_pending"] = voice_prompt
+                st.rerun()
+            else:
+                st.info("I couldn't detect speech. Tap the microphone and try again.")
+        except Exception:
+            st.error("Voice input failed. Please try again or type your message.")
 
-        if st.session_state.get("mindheal_voice_transcription_error"):
-            st.warning(st.session_state["mindheal_voice_transcription_error"])
-        elif st.session_state.get("mindheal_voice_transcript"):
-            st.text_area(
-                "Transcript (edit if needed)",
-                key="mindheal_voice_transcript",
-                height=100,
-            )
-            if st.button("Send voice message", type="primary", key="mindheal_send_voice"):
-                voice_prompt = st.session_state.get("mindheal_voice_transcript", "").strip()
-                if voice_prompt:
-                    st.session_state["_mindheal_voice_prompt_pending"] = voice_prompt
-                    st.session_state.pop("mindheal_voice_transcription_error", None)
-                    st.rerun()
-                else:
-                    st.info("No speech was detected. Please record again or type your message.")
-
-# ---------------------------------------------------------
-# Chat input
-# ---------------------------------------------------------
-
-prompt = st.chat_input("What's on your mind?")
 if st.session_state.get("_mindheal_voice_prompt_pending"):
     prompt = st.session_state.pop("_mindheal_voice_prompt_pending")
 
