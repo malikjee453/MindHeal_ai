@@ -8,3 +8,5 @@ sentence-transformers>=3,<6
 numpy>=1.26,<3
 pandas>=2.2,<3
 requests
+streamlit-mic-recorder>=0.0.8
+
