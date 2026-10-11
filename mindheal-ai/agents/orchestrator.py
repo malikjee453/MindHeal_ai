@@ -16,8 +16,9 @@ def respond(user_text, response_style="short", response_language="English", memo
 
     # Search the public web only when the user asks for current/online information.
     # Search snippets are untrusted reference material, not instructions.
-    if needs_web_search(user_text):
-        web_results = search_web(user_text, max_results=5)
+    web_requested = needs_web_search(user_text)
+    if web_requested:
+        web_results = search_web(user_text, max_results=3)
         if web_results:
             web_context = "\n\n".join(
                 f"[WEB RESULT {i + 1}]\nTitle: {item['title']}\n"
@@ -45,13 +46,24 @@ def respond(user_text, response_style="short", response_language="English", memo
                 "search is temporarily unavailable and ask for more details if needed."
             )
 
-    analysis = run_specialist(
-        route.route,
-        user_text,
-        context,
-        memory_context=memory_context,
-        conversation_context=conversation_context,
-    )
+    # Web-search requests already have source snippets, so skip the separate
+    # specialist LLM call and save one full model round-trip.
+    if web_requested:
+        analysis = (
+            "Answer the user's online-search request directly from the supplied "
+            "web results and any relevant knowledge context. Summarize the findings, "
+            "include clickable source links, and be transparent if search returned "
+            "no usable results. Do not reproduce full copyrighted song lyrics.\n\n"
+            + (context or "No web results were available.")
+        )
+    else:
+        analysis = run_specialist(
+            route.route,
+            user_text,
+            context,
+            memory_context=memory_context,
+            conversation_context=conversation_context,
+        )
     answer = compose_response(
         user_text,
         analysis,
