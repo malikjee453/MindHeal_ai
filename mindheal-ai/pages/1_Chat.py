@@ -5,7 +5,6 @@ from core.session import init_session
 from core.ui import render_header
 from core import personal_memory as memory
 from core.groq_client import chat as llm_chat, transcribe_audio
-from streamlit_mic_recorder import mic_recorder
 
 
 # =========================================================
@@ -310,12 +309,8 @@ with input_col:
     prompt = st.chat_input("What's on your mind?")
 
 with mic_col:
-    voice_audio = mic_recorder(
-        start_prompt="🎙️",
-        stop_prompt="⏹️",
-        just_once=True,
-        use_container_width=True,
-        format="wav",
+    voice_audio = st.audio_input(
+        "Tap to record a voice message",
         key="mindheal_inline_mic",
     )
 
