@@ -46,7 +46,7 @@ class _ResultsParser(HTMLParser):
             self._snippet_target = None
 
 
-def search_web(query, max_results=5):
+def search_web(query, max_results=3):
     """Return public web results; errors safely return an empty list."""
     query = " ".join(str(query or "").split())[:300]
     if not query:
@@ -55,7 +55,7 @@ def search_web(query, max_results=5):
         response = requests.get(
             "https://html.duckduckgo.com/html/?q=" + quote(query),
             headers={"User-Agent": "Mozilla/5.0 (compatible; MindHealAI/1.0)"},
-            timeout=8,
+            timeout=3,
         )
         response.raise_for_status()
         parser = _ResultsParser()
@@ -77,6 +77,6 @@ def needs_web_search(text):
         "look up", "find sources", "give me sources", "website for",
         "song lyrics", "lyrics of", "lyrics for", "find lyrics", "lyric of",
         "who won today", "today's news", "today news", "recent update",
-        "latest update", "current price", "as of today",
+        "latest update", "current price", "as of today", "find the lyrics",
     )
     return any(phrase in value for phrase in phrases)
