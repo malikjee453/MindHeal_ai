@@ -1,7 +1,6 @@
 """Lightweight web search for current/public information.
 
-Uses DuckDuckGo's HTML results page; no API key is required. Search is only
-called for requests that clearly need online information.
+Uses DuckDuckGo's HTML results page; no API key is required.
 """
 from html.parser import HTMLParser
 from urllib.parse import quote
@@ -14,44 +13,41 @@ class _ResultsParser(HTMLParser):
         self.results = []
         self._current = None
         self._capture = None
+        self._snippet_target = None
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
         classes = attrs.get("class", "")
         if tag == "a" and "result__a" in classes:
-            self._current = {
-                "title": "",
-                "url": attrs.get("href", ""),
-                "snippet": "",
-            }
+            self._current = {"title": "", "url": attrs.get("href", ""), "snippet": ""}
             self._capture = "title"
-        elif self._current is not None and tag in ("a", "div", "span") and (
-            "result__snippet" in classes
-        ):
+        elif "result__snippet" in classes and self.results:
+            self._snippet_target = self.results[-1]
             self._capture = "snippet"
 
     def handle_data(self, data):
-        if self._current is not None and self._capture in ("title", "snippet"):
-            self._current[self._capture] += data
+        if self._capture == "title" and self._current is not None:
+            self._current["title"] += data
+        elif self._capture == "snippet" and self._snippet_target is not None:
+            self._snippet_target["snippet"] += data
 
     def handle_endtag(self, tag):
-        if self._current is None:
-            return
-        if tag == "a" and self._capture == "title":
-            self._capture = None
-        if tag == "div" and self._capture == "snippet":
-            self._capture = None
-        if self._current and self._current["title"].strip() and self._current["url"].startswith("http"):
-            self._current["title"] = " ".join(self._current["title"].split())
-            self._current["snippet"] = " ".join(self._current["snippet"].split())
-            if not any(x["url"] == self._current["url"] for x in self.results):
-                self.results.append(self._current)
+        if tag == "a" and self._capture == "title" and self._current is not None:
+            item = self._current
+            item["title"] = " ".join(item["title"].split())
+            item["url"] = item["url"].strip()
+            if item["title"] and item["url"].startswith("http"):
+                if not any(x["url"] == item["url"] for x in self.results):
+                    self.results.append(item)
             self._current = None
             self._capture = None
+        elif self._capture == "snippet" and tag in ("a", "div", "span"):
+            self._capture = None
+            self._snippet_target = None
 
 
 def search_web(query, max_results=5):
-    """Return a list of public web results; errors safely return an empty list."""
+    """Return public web results; errors safely return an empty list."""
     query = " ".join(str(query or "").split())[:300]
     if not query:
         return []
@@ -64,21 +60,23 @@ def search_web(query, max_results=5):
         response.raise_for_status()
         parser = _ResultsParser()
         parser.feed(response.text)
+        for item in parser.results:
+            item["snippet"] = " ".join(item["snippet"].split())
         return parser.results[:max_results]
     except Exception:
         return []
 
 
 def needs_web_search(text):
-    """Conservative intent check: only search when the user asks for online facts."""
+    """Search only when the user clearly asks for online/current information."""
     value = str(text or "").lower()
     phrases = (
         "search the web", "search online", "look online", "find online",
         "on the internet", "from the internet", "latest news", "current news",
         "latest research", "recent research", "current information",
         "look up", "find sources", "give me sources", "website for",
-        "song lyrics", "lyrics of", "lyrics for", "find lyrics",
+        "song lyrics", "lyrics of", "lyrics for", "find lyrics", "lyric of",
         "who won today", "today's news", "today news", "recent update",
         "latest update", "current price", "as of today",
     )
-    return any(p in value for p in phrases)
+    return any(phrase in value for phrase in phrases)
