@@ -261,7 +261,7 @@ st.markdown(
         border: 0 !important;
         outline: none !important;
         box-shadow: none !important;
-        background: #F0F2F6 !important;
+        background: transparent !important;
     }
     div[data-testid="stAudioInput"] [data-testid="stFileUploaderDropzone"] {
         min-height: 2.8rem !important;
