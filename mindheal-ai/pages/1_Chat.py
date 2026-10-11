@@ -1,6 +1,4 @@
 import streamlit as st
-from pathlib import Path
-import streamlit.components.v1 as components
 
 from agents.orchestrator import respond
 from core.session import init_session
@@ -8,18 +6,7 @@ from core.ui import render_header
 from core import personal_memory as memory
 from core.groq_client import chat as llm_chat, transcribe_audio
 
-# Register the browser voice widget defensively so a component-path or
-# registry issue cannot crash the entire Chat page.
-try:
-    VOICE_COMPONENT = components.declare_component(
-        "mindheal_browser_voice",
-        path=str(Path(__file__).resolve().parents[1] / "voice_component"),
-    )
-    VOICE_COMPONENT_READY = True
-except Exception as voice_component_error:
-    VOICE_COMPONENT = None
-    VOICE_COMPONENT_READY = False
-    VOICE_COMPONENT_ERROR = f"{type(voice_component_error).__name__}: {voice_component_error}"
+from core.voice_component import VOICE_COMPONENT, VOICE_COMPONENT_READY, VOICE_COMPONENT_ERROR
 
 
 # =========================================================
