@@ -247,7 +247,7 @@ st.markdown(
         left: max(16rem, calc((100vw - 48rem) / 2 + 1rem)) !important;
         right: auto !important;
         /* Streamlit's chat composer sits above the viewport edge; match that baseline. */
-        bottom: 3.7rem !important;
+        bottom: 4.45rem !important;
         width: 2.8rem !important;
         height: 2.8rem !important;
         overflow: hidden !important;
@@ -271,7 +271,7 @@ st.markdown(
         div[data-testid="stAudioInput"] {
             left: 1rem !important;
             right: auto !important;
-            bottom: 3.55rem !important;
+            bottom: 4.2rem !important;
             width: 2.6rem !important;
             height: 2.6rem !important;
         }
