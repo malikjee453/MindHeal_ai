@@ -1,10 +1,17 @@
 import streamlit as st
+from pathlib import Path
+import streamlit.components.v1 as components
 
 from agents.orchestrator import respond
 from core.session import init_session
 from core.ui import render_header
 from core import personal_memory as memory
 from core.groq_client import chat as llm_chat, transcribe_audio
+
+VOICE_COMPONENT = components.declare_component(
+    "mindheal_browser_voice",
+    path=str(Path(__file__).resolve().parents[1] / "voice_component"),
+)
 
 
 # =========================================================
@@ -278,44 +285,34 @@ st.markdown(
         padding-left: 3.6rem !important;
         padding-right: 3.5rem !important;
     }
-    div[data-testid="stAudioInput"] {
+    div[data-testid="stCustomComponent"] {
         position: fixed !important;
         left: max(17.5rem, calc((100vw - 48rem) / 2 + 1.5rem)) !important;
-        right: auto !important;
-        /* Streamlit's chat composer sits above the viewport edge; match that baseline. */
         bottom: 4.45rem !important;
         width: 2.8rem !important;
         height: 2.8rem !important;
-        overflow: hidden !important;
+        overflow: visible !important;
         z-index: 1002 !important;
         background: transparent !important;
     }
-    div[data-testid="stAudioInput"] label { display: none !important; }
-    div[data-testid="stAudioInput"],
-    div[data-testid="stAudioInput"] > div,
-    div[data-testid="stAudioInput"] [data-testid="stFileUploaderDropzone"] {
-        border: 0 !important;
-        outline: none !important;
-        box-shadow: none !important;
-        background: transparent !important;
-    }
-    div[data-testid="stAudioInput"] [data-testid="stFileUploaderDropzone"] {
-        min-height: 2.8rem !important;
+    div[data-testid="stCustomComponent"] iframe {
+        width: 2.8rem !important;
         height: 2.8rem !important;
-        padding: 0 !important;
         border: 0 !important;
         background: transparent !important;
     }
-    div[data-testid="stAudioInput"] button { min-height: 2.5rem !important; }
     @media (max-width: 640px) {
         [data-testid="stChatInput"] textarea {
             padding-left: 3.3rem !important;
             padding-right: 3.5rem !important;
         }
-        div[data-testid="stAudioInput"] {
+        div[data-testid="stCustomComponent"] {
             left: 1.35rem !important;
-            right: auto !important;
             bottom: 4.2rem !important;
+            width: 2.6rem !important;
+            height: 2.6rem !important;
+        }
+        div[data-testid="stCustomComponent"] iframe {
             width: 2.6rem !important;
             height: 2.6rem !important;
         }
@@ -385,43 +382,17 @@ for message in st.session_state.messages:
 # Chat composer with microphone button
 # ---------------------------------------------------------
 
-# Tap the microphone to start recording, then tap it again to finish.
-# Finished audio is transcribed and sent through the normal chat flow automatically.
+# Browser speech recognition listens after one tap and automatically finishes after silence.
 prompt = st.chat_input("What's on your mind?")
-
-# Incrementing this generation resets the native recorder after each finished recording.
-if "_mindheal_mic_generation" not in st.session_state:
-    st.session_state["_mindheal_mic_generation"] = 0
-
-voice_audio = st.audio_input(
-    "Tap microphone to start; tap again to finish",
-    key=f"mindheal_inline_mic_{st.session_state['_mindheal_mic_generation']}",
+voice_text = VOICE_COMPONENT(
+    language="ur-PK" if str(st.session_state.get("language", "English")).lower().startswith("urdu") else "en-US",
+    key="mindheal_browser_voice",
+    default=None,
 )
-
-if voice_audio is not None:
-    import hashlib
-
-    audio_bytes = voice_audio.getvalue()
-    if audio_bytes:
-        audio_id = hashlib.sha256(audio_bytes).hexdigest()
-        if st.session_state.get("_mindheal_last_voice_id") != audio_id:
-            st.session_state["_mindheal_last_voice_id"] = audio_id
-            try:
-                with st.spinner("Transcribing your voice and preparing a reply..."):
-                    voice_prompt = transcribe_audio(
-                        audio_bytes,
-                        filename=getattr(voice_audio, "name", None) or "voice_input.wav",
-                    )
-                # Clear the recorder on the next rerun so it is ready for the next message.
-                st.session_state["_mindheal_mic_generation"] += 1
-                if voice_prompt:
-                    st.session_state["_mindheal_voice_prompt_pending"] = voice_prompt
-                    st.rerun()
-                else:
-                    st.info("I couldn't detect speech. Tap the microphone and try again.")
-                    st.rerun()
-            except Exception as e:
-                st.error(f"Voice input failed: {type(e).__name__}. Please try again or type your message.")
+if voice_text and voice_text != st.session_state.get("_mindheal_last_voice_transcript"):
+    st.session_state["_mindheal_last_voice_transcript"] = voice_text
+    st.session_state["_mindheal_voice_prompt_pending"] = voice_text
+    st.rerun()
 
 if st.session_state.get("_mindheal_voice_prompt_pending"):
     prompt = st.session_state.pop("_mindheal_voice_prompt_pending")
