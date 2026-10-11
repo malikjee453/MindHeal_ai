@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body { margin:0; padding:0; background:transparent; overflow:hidden; font-family:Arial,sans-serif; }
+  #mic { width:44px; height:44px; border:0; border-radius:50%; background:transparent; color:#607D73; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
+  #mic:hover { background:rgba(47,118,85,.10); }
+  #mic.listening { color:#c0392b; background:rgba(192,57,43,.10); }
+  #mic svg { width:19px; height:19px; }
+  #status { display:none; }
+</style>
+</head>
+<body>
+<button id="mic" type="button" aria-label="Start voice chat" title="Tap to speak">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"></rect><path d="M5 10a7 7 0 0 0 14 0M12 17v5M9 22h6"></path></svg>
+</button>
+<span id="status" aria-live="polite"></span>
+<script>
+(function(){
+  const mic = document.getElementById('mic');
+  const status = document.getElementById('status');
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognition = null, listening = false, transcript = '', silenceTimer = null, sent = false;
+
+  function send(type, data) {
+    window.parent.postMessage({isStreamlitMessage:true, type:type, ...data}, '*');
+  }
+  function height() { send('streamlit:setFrameHeight', {height:44}); }
+  function setListening(value) {
+    listening = value;
+    mic.classList.toggle('listening', value);
+    mic.title = value ? 'Listening… pause speaking to send' : 'Tap to speak';
+    mic.setAttribute('aria-label', value ? 'Listening' : 'Start voice chat');
+  }
+  function finish() {
+    if (!listening || !recognition) return;
+    try { recognition.stop(); } catch(e) { deliver(); }
+  }
+  function deliver() {
+    clearTimeout(silenceTimer);
+    setListening(false);
+    if (!sent && transcript.trim()) {
+      sent = true;
+      send('streamlit:setComponentValue', {value: transcript.trim()});
+    }
+    recognition = null;
+  }
+  mic.addEventListener('click', function() {
+    if (listening) { finish(); return; }
+    if (!SpeechRecognition) {
+      status.textContent = 'Speech recognition is not supported in this browser. Try Chrome or Edge.';
+      send('streamlit:setComponentValue', {value: ''});
+      return;
+    }
+    transcript = '';
+    sent = false;
+    recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = document.documentElement.lang || 'en-US';
+    recognition.onstart = function() {
+      setListening(true);
+      status.textContent = 'Listening';
+    };
+    recognition.onresult = function(event) {
+      let interim = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const text = event.results[i][0].transcript;
+        if (event.results[i].isFinal) transcript += text + ' ';
+        else interim += text;
+      }
+      clearTimeout(silenceTimer);
+      if ((transcript + interim).trim()) {
+        silenceTimer = setTimeout(finish, 1400);
+      }
+    };
+    recognition.onerror = function(event) {
+      status.textContent = event.error === 'not-allowed'
+        ? 'Allow microphone access in your browser.'
+        : 'Voice recognition error: ' + event.error;
+      setListening(false);
+    };
+    recognition.onend = function() { deliver(); };
+    try { recognition.start(); }
+    catch(e) { setListening(false); status.textContent = 'Could not start microphone. Try again.'; }
+  });
+  window.addEventListener('message', function(event) {
+    if (event.data && event.data.type === 'streamlit:render') {
+      height();
+      send('streamlit:componentReady', {apiVersion:1});
+    }
+  });
+  height();
+  send('streamlit:componentReady', {apiVersion:1});
+})();
+</script>
+</body>
+</html>
