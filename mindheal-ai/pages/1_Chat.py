@@ -237,10 +237,33 @@ st.markdown(
         box-shadow: none !important;
     }
 
-    /* Dock voice input at the bottom of the viewport. */
-    div[data-testid="stAudioInput"] { position: fixed !important; right: 1rem !important; bottom: 1rem !important; width: 70px !important; z-index: 1001 !important; background: white !important; }
+    /* Keep the native chat composer fixed at the bottom; overlay the mic on its right side. */
+    [data-testid="stChatInput"] {
+        position: fixed !important;
+        bottom: 1rem !important;
+        z-index: 1000 !important;
+    }
+    [data-testid="stChatInput"] textarea { padding-right: 4.5rem !important; }
+    div[data-testid="stAudioInput"] {
+        position: fixed !important;
+        right: max(1rem, calc((100vw - 48rem) / 2 + 7.5rem)) !important;
+        bottom: 1.15rem !important;
+        width: 3.5rem !important;
+        z-index: 1002 !important;
+        background: transparent !important;
+    }
     div[data-testid="stAudioInput"] label { display: none !important; }
-    @media (max-width: 640px) { div[data-testid="stAudioInput"] { right: 0.5rem !important; bottom: 1rem !important; width: 62px !important; } [data-testid="stChatInput"] { padding-right: 65px !important; } }
+    div[data-testid="stAudioInput"] [data-testid="stFileUploaderDropzone"] {
+        min-height: 2.6rem !important;
+        padding: 0.15rem !important;
+        border: 0 !important;
+        background: transparent !important;
+    }
+    div[data-testid="stAudioInput"] button { min-height: 2.3rem !important; }
+    @media (max-width: 640px) {
+        [data-testid="stChatInput"] { bottom: 0.75rem !important; }
+        div[data-testid="stAudioInput"] { right: 1rem !important; bottom: 0.9rem !important; width: 3rem !important; }
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -308,16 +331,13 @@ for message in st.session_state.messages:
 
 # Place the microphone directly beside the chat input. When recording stops,
 # transcribe automatically and send the recognized words through the same chat flow.
-input_col, mic_col = st.columns([12, 1], vertical_alignment="bottom", gap="small")
+prompt = st.chat_input("What's on your mind?")
 
-with input_col:
-    prompt = st.chat_input("What's on your mind?")
-
-with mic_col:
-    voice_audio = st.audio_input(
-        "Tap to record a voice message",
-        key="mindheal_inline_mic",
-    )
+# Keep this widget outside columns. CSS docks it over the right side of the chat composer.
+voice_audio = st.audio_input(
+    "Tap to record a voice message",
+    key="mindheal_inline_mic",
+)
 
 if voice_audio is not None:
     import hashlib
