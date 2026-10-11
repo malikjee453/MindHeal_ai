@@ -242,7 +242,9 @@ st.markdown(
     [data-testid="stChatInput"] textarea { padding-right: 4.5rem !important; }
     div[data-testid="stAudioInput"] {
         position: fixed !important;
-        right: max(1rem, calc((100vw - 48rem) / 2 + 1rem)) !important;
+        /* Align microphone with the left edge of the native chat composer. */
+        left: max(1rem, calc((100vw - 48rem) / 2 + 1rem)) !important;
+        right: auto !important;
         bottom: 1.15rem !important;
         width: 3.5rem !important;
         z-index: 1002 !important;
@@ -258,7 +260,8 @@ st.markdown(
     div[data-testid="stAudioInput"] button { min-height: 2.3rem !important; }
     @media (max-width: 640px) {
         div[data-testid="stAudioInput"] {
-            right: 1rem !important;
+            left: 1rem !important;
+            right: auto !important;
             bottom: 0.9rem !important;
             width: 3rem !important;
         }
