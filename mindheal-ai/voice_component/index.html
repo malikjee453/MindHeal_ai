@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:transparent; }
+  body { display:flex; align-items:center; justify-content:center; font-family:Arial,sans-serif; }
+  button {
+    width:42px; height:42px; border:0; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:transparent; color:#647D73; cursor:pointer; padding:0;
+    -webkit-tap-highlight-color:transparent;
+  }
+  button:hover { background:rgba(47,118,85,.09); }
+  button[aria-pressed="true"] { color:#B42318; background:rgba(180,35,24,.08); }
+  button:focus-visible { outline:2px solid #2F7655; outline-offset:1px; }
+  svg { width:19px; height:19px; }
+  #hint { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+</style>
+</head>
+<body>
+<button id="mic" type="button" aria-label="Start voice chat" title="Tap once and speak; it sends automatically after you pause" aria-pressed="false">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="9" y="2" width="6" height="13" rx="3"></rect>
+    <path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"></path>
+  </svg>
+</button>
+<span id="hint" aria-live="polite"></span>
+<script>
+(function () {
+  const send = (type, extra) => window.parent.postMessage(Object.assign({
+    isStreamlitMessage: true, type: type
+  }, extra || {}), "*");
+  let language = "en-US";
+  let recognition = null;
+  let active = false;
+  let finalText = "";
+  let sentThisSession = false;
+  const button = document.getElementById("mic");
+  const hint = document.getElementById("hint");
+
+  function setActive(on) {
+    active = on;
+    button.setAttribute("aria-pressed", on ? "true" : "false");
+    button.setAttribute("aria-label", on ? "Listening; tap to cancel" : "Start voice chat");
+    button.title = on ? "Listening… pause to send automatically, or tap to cancel" : "Tap once and speak; it sends automatically after you pause";
+    hint.textContent = on ? "Listening" : "";
+  }
+
+  function startListening() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      hint.textContent = "Speech recognition is not supported in this browser. Try Chrome or Edge.";
+      button.title = hint.textContent;
+      return;
+    }
+    finalText = "";
+    sentThisSession = false;
+    recognition = new SpeechRecognition();
+    recognition.lang = language || "en-US";
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = (event) => {
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const text = event.results[i][0] && event.results[i][0].transcript || "";
+        if (event.results[i].isFinal) finalText += text + " ";
+        else interim += text;
+      }
+      hint.textContent = interim || finalText || "Listening";
+    };
+    recognition.onerror = (event) => {
+      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+        hint.textContent = "Allow microphone access in your browser.";
+      } else if (event.error !== "no-speech" && event.error !== "aborted") {
+        hint.textContent = "Voice input error: " + event.error;
+      }
+      setActive(false);
+    };
+    recognition.onend = () => {
+      setActive(false);
+      const transcript = finalText.trim();
+      if (!sentThisSession && transcript) {
+        sentThisSession = true;
+        send("streamlit:setComponentValue", { value: transcript });
+      }
+      recognition = null;
+    };
+    setActive(true);
+    try { recognition.start(); }
+    catch (err) { setActive(false); hint.textContent = "Could not start listening. Please try again."; }
+  }
+
+  button.addEventListener("click", () => {
+    if (active && recognition) {
+      // A second tap cancels listening; normal completion happens automatically after silence.
+      try { recognition.abort(); } catch (_) {}
+      setActive(false);
+      recognition = null;
+      return;
+    }
+    startListening();
+  });
+
+  window.addEventListener("message", (event) => {
+    const data = event.data || {};
+    if (data.type === "streamlit:render") {
+      const args = data.args || {};
+      language = args.language || "en-US";
+    }
+  });
+  send("streamlit:componentReady", { apiVersion: 1 });
+  send("streamlit:setFrameHeight", { height: 44 });
+})();
+</script>
+</body>
+</html>
