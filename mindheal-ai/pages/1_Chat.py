@@ -494,12 +494,22 @@ if prompt:
             with st.expander("Knowledge sources"):
 
                 for source in sources:
-
-                    st.caption(
-                        f"{source['filename']} — "
-                        f"chunk {source['chunk_id']} "
-                        f"(similarity {source['score']})"
-                    )
+                    if source.get("type") == "web":
+                        title = source.get("title", "Web result")
+                        url = source.get("url", "")
+                        snippet = source.get("snippet", "")
+                        if url:
+                            st.markdown(f"- [{title}]({url})")
+                        else:
+                            st.markdown(f"- {title}")
+                        if snippet:
+                            st.caption(snippet)
+                    else:
+                        st.caption(
+                            f"{source['filename']} — "
+                            f"chunk {source['chunk_id']} "
+                            f"(similarity {source['score']})"
+                        )
 
     # -----------------------------------------------------
     # Save response
