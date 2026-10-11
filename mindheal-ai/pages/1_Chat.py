@@ -379,12 +379,23 @@ for message in st.session_state.messages:
 
 prompt = None
 if VOICE_COMPONENT_READY:
+    _speak_latest = bool(st.session_state.get("_mindheal_speak_latest", False))
+    _latest_answer = ""
+    if _speak_latest and st.session_state.messages:
+        _last_message = st.session_state.messages[-1]
+        if _last_message.get("role") == "assistant":
+            _latest_answer = str(_last_message.get("content", ""))
     composer_result = VOICE_COMPONENT(
         language="ur-PK" if str(st.session_state.get("language", "English")).lower().startswith("urdu") else "en-US",
         clearToken=len(st.session_state.messages),
+        speakText=_latest_answer,
+        speakId=str(len(st.session_state.messages)) if _latest_answer else "",
+        speakLanguage="ur-PK" if str(st.session_state.get("language", "English")).lower().startswith("urdu") else "en-US",
         key="mindheal_browser_voice",
         default=None,
     )
+    if _speak_latest:
+        st.session_state["_mindheal_speak_latest"] = False
     if isinstance(composer_result, dict):
         composer_id = str(composer_result.get("id", ""))
         composer_text = str(composer_result.get("text", "")).strip()
@@ -506,3 +517,7 @@ if prompt:
                 memory.save_profile(memory_summary=summary[:3000])
             except Exception:
                 pass
+
+    # Trigger a fresh component render so the latest reply is spoken once.
+    st.session_state["_mindheal_speak_latest"] = True
+    st.rerun()
