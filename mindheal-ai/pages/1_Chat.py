@@ -314,23 +314,27 @@ with mic_col:
         key="mindheal_inline_mic",
     )
 
-if voice_audio and voice_audio.get("bytes"):
-    audio_id = voice_audio.get("id")
-    if st.session_state.get("_mindheal_last_voice_id") != audio_id:
-        st.session_state["_mindheal_last_voice_id"] = audio_id
-        try:
-            with st.spinner("Understanding your voice..."):
-                voice_prompt = transcribe_audio(
-                    voice_audio["bytes"],
-                    filename="voice_input.wav",
-                )
-            if voice_prompt:
-                st.session_state["_mindheal_voice_prompt_pending"] = voice_prompt
-                st.rerun()
-            else:
-                st.info("I couldn't detect speech. Tap the microphone and try again.")
-        except Exception:
-            st.error("Voice input failed. Please try again or type your message.")
+if voice_audio is not None:
+    import hashlib
+
+    audio_bytes = voice_audio.getvalue()
+    if audio_bytes:
+        audio_id = hashlib.sha256(audio_bytes).hexdigest()
+        if st.session_state.get("_mindheal_last_voice_id") != audio_id:
+            st.session_state["_mindheal_last_voice_id"] = audio_id
+            try:
+                with st.spinner("Understanding your voice..."):
+                    voice_prompt = transcribe_audio(
+                        audio_bytes,
+                        filename=getattr(voice_audio, "name", None) or "voice_input.wav",
+                    )
+                if voice_prompt:
+                    st.session_state["_mindheal_voice_prompt_pending"] = voice_prompt
+                    st.rerun()
+                else:
+                    st.info("I couldn't detect speech. Tap the microphone and try again.")
+            except Exception:
+                st.error("Voice input failed. Please try again or type your message.")
 
 if st.session_state.get("_mindheal_voice_prompt_pending"):
     prompt = st.session_state.pop("_mindheal_voice_prompt_pending")
