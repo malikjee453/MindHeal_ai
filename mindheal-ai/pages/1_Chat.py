@@ -16,9 +16,10 @@ try:
         path=str(Path(__file__).resolve().parents[1] / "voice_component"),
     )
     VOICE_COMPONENT_READY = True
-except Exception:
+except Exception as voice_component_error:
     VOICE_COMPONENT = None
     VOICE_COMPONENT_READY = False
+    VOICE_COMPONENT_ERROR = f"{type(voice_component_error).__name__}: {voice_component_error}"
 
 
 # =========================================================
@@ -402,7 +403,8 @@ if VOICE_COMPONENT_READY:
         st.session_state["_mindheal_voice_prompt_pending"] = voice_text
         st.rerun()
 else:
-    st.caption("Voice chat is temporarily unavailable. You can type a message below.")
+    st.warning("Voice chat could not initialize. Details: " + VOICE_COMPONENT_ERROR)
+    st.caption("You can still type a message below while this is fixed.")
 
 if st.session_state.get("_mindheal_voice_prompt_pending"):
     prompt = st.session_state.pop("_mindheal_voice_prompt_pending")
