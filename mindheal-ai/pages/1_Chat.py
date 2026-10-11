@@ -236,6 +236,11 @@ st.markdown(
         border: none !important;
         box-shadow: none !important;
     }
+
+    /* Dock voice input at the bottom of the viewport. */
+    div[data-testid="stAudioInput"] { position: fixed !important; right: 1rem !important; bottom: 1rem !important; width: 70px !important; z-index: 1001 !important; background: white !important; }
+    div[data-testid="stAudioInput"] label { display: none !important; }
+    @media (max-width: 640px) { div[data-testid="stAudioInput"] { right: 0.5rem !important; bottom: 1rem !important; width: 62px !important; } [data-testid="stChatInput"] { padding-right: 65px !important; } }
     </style>
     """,
     unsafe_allow_html=True,
