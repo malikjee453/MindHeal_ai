@@ -21,6 +21,8 @@
   .mic:hover { background:rgba(47,118,85,.09); }
   .mic[aria-pressed="true"] { color:#b42318; background:rgba(180,35,24,.10); }
   .send { color:#8b9d98; background:#e2e6ec; }
+  .speak { color:#2f7655; background:transparent; display:none; }
+  .speak.visible { display:flex; }
   .send:disabled { opacity:.65; cursor:default; }
   input {
     min-width:0; flex:1; width:100%; border:0; outline:0; background:transparent;
@@ -40,6 +42,11 @@
     </svg>
   </button>
   <input id="message" type="text" autocomplete="off" placeholder="What's on your mind?" aria-label="Your message">
+  <button class="speak mic" id="speak" type="button" aria-label="Read latest answer aloud" title="Read latest answer aloud">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M11 5 6 9H3v6h3l5 4z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"></path>
+    </svg>
+  </button>
   <button class="send" id="send" type="submit" aria-label="Send message" title="Send message">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="M12 19V5M5 12l7-7 7 7"></path>
@@ -61,7 +68,33 @@
   const form = document.getElementById("composer");
   const input = document.getElementById("message");
   const mic = document.getElementById("mic");
+  const speakButton = document.getElementById("speak");
   const status = document.getElementById("status");
+  let latestSpeakText = "";
+  let latestSpeakLanguage = "en-US";
+
+  function speakReply(text, lang) {
+    const clean = String(text || "").trim();
+    if (!clean || !("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
+      status.textContent = "Speech playback is not supported by this browser.";
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(clean);
+    utterance.lang = lang || "en-US";
+    utterance.rate = 0.94;
+    utterance.pitch = 1.0;
+    const voices = window.speechSynthesis.getVoices();
+    const wanted = utterance.lang.toLowerCase();
+    const voice = voices.find(v => v.lang.toLowerCase() === wanted)
+      || voices.find(v => v.lang.toLowerCase().startsWith(wanted.split("-")[0]));
+    if (voice) utterance.voice = voice;
+    utterance.onerror = () => { status.textContent = "Tap the speaker icon to try playing the answer again."; };
+    utterance.onend = () => { status.textContent = ""; };
+    window.speechSynthesis.speak(utterance);
+  }
+
+  speakButton.addEventListener("click", () => speakReply(latestSpeakText, latestSpeakLanguage));
   let language = "en-US";
   let recognition = null;
   let active = false;
@@ -144,26 +177,19 @@
         input.dataset.clearToken = String(args.clearToken);
       }
 
-      // Speak each newly generated assistant answer once, using the selected language.
+      // Keep a playback fallback visible, and attempt automatic spoken replies.
       const speakText = String(args.speakText || "").trim();
       const speakId = String(args.speakId || "");
       if (speakText && speakId && input.dataset.lastSpokenId !== speakId) {
         input.dataset.lastSpokenId = speakId;
-        if ("speechSynthesis" in window && "SpeechSynthesisUtterance" in window) {
-          window.speechSynthesis.cancel();
-          const utterance = new SpeechSynthesisUtterance(speakText);
-          utterance.lang = args.speakLanguage || language || "en-US";
-          utterance.rate = 0.96;
-          utterance.pitch = 1.0;
-          const voices = window.speechSynthesis.getVoices();
-          const wanted = utterance.lang.toLowerCase();
-          const voice = voices.find(v => v.lang.toLowerCase() === wanted)
-            || voices.find(v => v.lang.toLowerCase().startsWith(wanted.split("-")[0]));
-          if (voice) utterance.voice = voice;
-          window.speechSynthesis.speak(utterance);
-        } else {
-          status.textContent = "Spoken replies are not supported by this browser.";
-        }
+        latestSpeakText = speakText;
+        latestSpeakLanguage = args.speakLanguage || language || "en-US";
+        speakButton.classList.add("visible");
+        speakReply(latestSpeakText, latestSpeakLanguage);
+      } else if (speakText) {
+        latestSpeakText = speakText;
+        latestSpeakLanguage = args.speakLanguage || language || "en-US";
+        speakButton.classList.add("visible");
       }
     }
   });
