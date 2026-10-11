@@ -1,12 +1,11 @@
 import streamlit as st
 
 from agents.orchestrator import respond
-from core.session import init_session
+from core.session import init_session, VOICE_COMPONENT, VOICE_COMPONENT_READY, VOICE_COMPONENT_ERROR
 from core.ui import render_header
 from core import personal_memory as memory
 from core.groq_client import chat as llm_chat, transcribe_audio
 
-from core.voice_component import VOICE_COMPONENT, VOICE_COMPONENT_READY, VOICE_COMPONENT_ERROR
 
 
 # =========================================================
