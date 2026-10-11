@@ -439,9 +439,20 @@ if prompt:
                     display_name = profile.get("display_name", "").strip()
                     if display_name:
                         background_memory = f"User prefers to be called {display_name}. " + background_memory
+                # Include recent turns from this browser session so follow-up
+                # questions such as "why?" or "what about the first option?" make sense.
+                # The current prompt is already appended to messages, so exclude it here.
+                prior_messages = st.session_state.messages[:-1][-10:]
+                conversation_context = "\\n".join(
+                    f"{item['role']}: {item['content']}"
+                    for item in prior_messages
+                    if item.get("role") in ("user", "assistant")
+                )
+
                 answer, sources, route = respond(
                     prompt,
                     memory_context=background_memory,
+                    conversation_context=conversation_context,
                     response_style=(
                         "detailed"
                         if answer_length == "Detailed Answer"
