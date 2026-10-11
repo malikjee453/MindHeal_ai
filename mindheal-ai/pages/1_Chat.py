@@ -385,14 +385,17 @@ for message in st.session_state.messages:
 # Chat composer with microphone button
 # ---------------------------------------------------------
 
-# Place the microphone directly beside the chat input. When recording stops,
-# transcribe automatically and send the recognized words through the same chat flow.
+# Tap the microphone to start recording, then tap it again to finish.
+# Finished audio is transcribed and sent through the normal chat flow automatically.
 prompt = st.chat_input("What's on your mind?")
 
-# Keep this widget outside columns. CSS docks it over the right side of the chat composer.
+# Incrementing this generation resets the native recorder after each finished recording.
+if "_mindheal_mic_generation" not in st.session_state:
+    st.session_state["_mindheal_mic_generation"] = 0
+
 voice_audio = st.audio_input(
-    "Tap to record a voice message",
-    key="mindheal_inline_mic",
+    "Tap microphone to start; tap again to finish",
+    key=f"mindheal_inline_mic_{st.session_state['_mindheal_mic_generation']}",
 )
 
 if voice_audio is not None:
@@ -404,18 +407,21 @@ if voice_audio is not None:
         if st.session_state.get("_mindheal_last_voice_id") != audio_id:
             st.session_state["_mindheal_last_voice_id"] = audio_id
             try:
-                with st.spinner("Understanding your voice..."):
+                with st.spinner("Transcribing your voice and preparing a reply..."):
                     voice_prompt = transcribe_audio(
                         audio_bytes,
                         filename=getattr(voice_audio, "name", None) or "voice_input.wav",
                     )
+                # Clear the recorder on the next rerun so it is ready for the next message.
+                st.session_state["_mindheal_mic_generation"] += 1
                 if voice_prompt:
                     st.session_state["_mindheal_voice_prompt_pending"] = voice_prompt
                     st.rerun()
                 else:
                     st.info("I couldn't detect speech. Tap the microphone and try again.")
-            except Exception:
-                st.error("Voice input failed. Please try again or type your message.")
+                    st.rerun()
+            except Exception as e:
+                st.error(f"Voice input failed: {type(e).__name__}. Please try again or type your message.")
 
 if st.session_state.get("_mindheal_voice_prompt_pending"):
     prompt = st.session_state.pop("_mindheal_voice_prompt_pending")
