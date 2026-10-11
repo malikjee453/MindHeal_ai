@@ -243,7 +243,7 @@ st.markdown(
     div[data-testid="stAudioInput"] {
         position: fixed !important;
         /* Align microphone with the left edge of the native chat composer. */
-        left: max(1rem, calc((100vw - 48rem) / 2 + 1rem)) !important;
+        left: max(16rem, calc((100vw - 48rem) / 2 + 1rem)) !important;
         right: auto !important;
         bottom: 1.15rem !important;
         width: 3.5rem !important;
