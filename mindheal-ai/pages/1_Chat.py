@@ -8,10 +8,17 @@ from core.ui import render_header
 from core import personal_memory as memory
 from core.groq_client import chat as llm_chat, transcribe_audio
 
-VOICE_COMPONENT = components.declare_component(
-    "mindheal_browser_voice",
-    path=str(Path(__file__).resolve().parents[1] / "voice_component"),
-)
+# Register the browser voice widget defensively so a component-path or
+# registry issue cannot crash the entire Chat page.
+try:
+    VOICE_COMPONENT = components.declare_component(
+        "mindheal_browser_voice",
+        path=str(Path(__file__).resolve().parents[1] / "voice_component"),
+    )
+    VOICE_COMPONENT_READY = True
+except Exception:
+    VOICE_COMPONENT = None
+    VOICE_COMPONENT_READY = False
 
 
 # =========================================================
@@ -384,15 +391,18 @@ for message in st.session_state.messages:
 
 # Browser speech recognition listens after one tap and automatically finishes after silence.
 prompt = st.chat_input("What's on your mind?")
-voice_text = VOICE_COMPONENT(
-    language="ur-PK" if str(st.session_state.get("language", "English")).lower().startswith("urdu") else "en-US",
-    key="mindheal_browser_voice",
-    default=None,
-)
-if voice_text and voice_text != st.session_state.get("_mindheal_last_voice_transcript"):
-    st.session_state["_mindheal_last_voice_transcript"] = voice_text
-    st.session_state["_mindheal_voice_prompt_pending"] = voice_text
-    st.rerun()
+if VOICE_COMPONENT_READY:
+    voice_text = VOICE_COMPONENT(
+        language="ur-PK" if str(st.session_state.get("language", "English")).lower().startswith("urdu") else "en-US",
+        key="mindheal_browser_voice",
+        default=None,
+    )
+    if voice_text and voice_text != st.session_state.get("_mindheal_last_voice_transcript"):
+        st.session_state["_mindheal_last_voice_transcript"] = voice_text
+        st.session_state["_mindheal_voice_prompt_pending"] = voice_text
+        st.rerun()
+else:
+    st.caption("Voice chat is temporarily unavailable. You can type a message below.")
 
 if st.session_state.get("_mindheal_voice_prompt_pending"):
     prompt = st.session_state.pop("_mindheal_voice_prompt_pending")
