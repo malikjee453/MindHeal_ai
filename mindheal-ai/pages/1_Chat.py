@@ -373,27 +373,32 @@ for message in st.session_state.messages:
 
 
 # ---------------------------------------------------------
-# Chat composer with microphone button
+# Unified chat composer: microphone and text input stay together.
+# Voice automatically submits after the browser detects the end of speech.
 # ---------------------------------------------------------
 
-# Browser speech recognition listens after one tap and automatically finishes after silence.
-prompt = st.chat_input("What's on your mind?")
+prompt = None
 if VOICE_COMPONENT_READY:
-    voice_text = VOICE_COMPONENT(
+    composer_result = VOICE_COMPONENT(
         language="ur-PK" if str(st.session_state.get("language", "English")).lower().startswith("urdu") else "en-US",
+        clearToken=len(st.session_state.messages),
         key="mindheal_browser_voice",
         default=None,
     )
-    if voice_text and voice_text != st.session_state.get("_mindheal_last_voice_transcript"):
-        st.session_state["_mindheal_last_voice_transcript"] = voice_text
-        st.session_state["_mindheal_voice_prompt_pending"] = voice_text
-        st.rerun()
+    if isinstance(composer_result, dict):
+        composer_id = str(composer_result.get("id", ""))
+        composer_text = str(composer_result.get("text", "")).strip()
+        if composer_text and composer_id and composer_id != st.session_state.get("_mindheal_last_composer_id"):
+            st.session_state["_mindheal_last_composer_id"] = composer_id
+            prompt = composer_text
+    elif isinstance(composer_result, str) and composer_result.strip():
+        # Backward compatibility with an older version of the voice component.
+        if composer_result != st.session_state.get("_mindheal_last_voice_transcript"):
+            st.session_state["_mindheal_last_voice_transcript"] = composer_result
+            prompt = composer_result
 else:
-    st.warning("Voice chat could not initialize. Details: " + VOICE_COMPONENT_ERROR)
-    st.caption("You can still type a message below while this is fixed.")
-
-if st.session_state.get("_mindheal_voice_prompt_pending"):
-    prompt = st.session_state.pop("_mindheal_voice_prompt_pending")
+    st.caption("Voice composer is temporarily unavailable. You can type a message below.")
+    prompt = st.chat_input("What's on your mind?")
 
 if prompt:
 
