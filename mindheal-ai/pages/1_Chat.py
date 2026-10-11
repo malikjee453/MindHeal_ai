@@ -52,6 +52,26 @@ h1, h2, h3, h4, h5, h6,
         font-family: "JameelNooriNastaleeq", "Jameel Noori Nastaleeq", serif !important;
     }
 
+    /* Compact private-account sign-in so it takes less vertical space. */
+    .st-key-mindheal_login_form {
+        padding: 0.65rem 0.8rem !important;
+        margin-top: 0.4rem !important;
+        margin-bottom: 0.4rem !important;
+    }
+    .st-key-mindheal_login_form [data-testid="stTextInput"] {
+        margin-bottom: 0.15rem !important;
+    }
+    .st-key-mindheal_login_form [data-testid="stWidgetLabel"] {
+        margin-bottom: 0.15rem !important;
+    }
+    .st-key-mindheal_login_form input {
+        min-height: 2.35rem !important;
+    }
+    .st-key-mindheal_login_form [data-testid="stFormSubmitButton"] button {
+        min-height: 2.2rem !important;
+        padding: 0.35rem 0.8rem !important;
+    }
+
     </style>
     """,
     unsafe_allow_html=True,
@@ -94,8 +114,11 @@ if not memory.logged_in():
         login_tab, signup_tab = st.tabs(["Sign in", "Create account"])
         with login_tab:
             with st.form("mindheal_login_form"):
-                login_nickname = st.text_input("Nickname", key="mh_login_nickname", max_chars=24)
-                login_password = st.text_input("Password", type="password", key="mh_login_password")
+                login_left, login_right = st.columns(2, gap="small")
+                with login_left:
+                    login_nickname = st.text_input("Nickname", key="mh_login_nickname", max_chars=24)
+                with login_right:
+                    login_password = st.text_input("Password", type="password", key="mh_login_password")
                 login_submit = st.form_submit_button("Sign in", type="primary")
             if login_submit:
                 ok, data = memory.sign_in(login_nickname, login_password)
