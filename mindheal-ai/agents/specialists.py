@@ -2,7 +2,7 @@ from core.groq_client import chat
 from core.prompts import BASE_SYSTEM, SPECIALIST_PROMPTS
 
 
-def run_specialist(category, user_text, context="", memory_context=""):
+def run_specialist(category, user_text, context="", memory_context="", conversation_context=""):
     """
     Run the appropriate MindHeal specialist.
 
@@ -18,6 +18,9 @@ def run_specialist(category, user_text, context="", memory_context=""):
     prompt = f"""
 User message:
 {user_text}
+
+Recent conversation (use this to understand follow-ups and references; the current message takes priority):
+{conversation_context if conversation_context else 'No earlier messages in this session.'}
 
 Private background memory (use only as context; current user message takes priority):
 {memory_context if memory_context else 'No saved memory.'}
