@@ -244,7 +244,7 @@ st.markdown(
     }
     div[data-testid="stAudioInput"] {
         position: fixed !important;
-        left: max(16rem, calc((100vw - 48rem) / 2 + 1rem)) !important;
+        left: max(17.5rem, calc((100vw - 48rem) / 2 + 1.5rem)) !important;
         right: auto !important;
         /* Streamlit's chat composer sits above the viewport edge; match that baseline. */
         bottom: 4.45rem !important;
@@ -269,7 +269,7 @@ st.markdown(
             padding-right: 3.5rem !important;
         }
         div[data-testid="stAudioInput"] {
-            left: 1rem !important;
+            left: 1.35rem !important;
             right: auto !important;
             bottom: 4.2rem !important;
             width: 2.6rem !important;
