@@ -237,16 +237,12 @@ st.markdown(
         box-shadow: none !important;
     }
 
-    /* Keep the native chat composer fixed at the bottom; overlay the mic on its right side. */
-    [data-testid="stChatInput"] {
-        position: fixed !important;
-        bottom: 1rem !important;
-        z-index: 1000 !important;
-    }
+    /* Let Streamlit control the native chat input's width and bottom docking.
+       Only position the microphone overlay, so the composer cannot collapse. */
     [data-testid="stChatInput"] textarea { padding-right: 4.5rem !important; }
     div[data-testid="stAudioInput"] {
         position: fixed !important;
-        right: max(1rem, calc((100vw - 48rem) / 2 + 7.5rem)) !important;
+        right: max(1rem, calc((100vw - 48rem) / 2 + 1rem)) !important;
         bottom: 1.15rem !important;
         width: 3.5rem !important;
         z-index: 1002 !important;
@@ -261,8 +257,11 @@ st.markdown(
     }
     div[data-testid="stAudioInput"] button { min-height: 2.3rem !important; }
     @media (max-width: 640px) {
-        [data-testid="stChatInput"] { bottom: 0.75rem !important; }
-        div[data-testid="stAudioInput"] { right: 1rem !important; bottom: 0.9rem !important; width: 3rem !important; }
+        div[data-testid="stAudioInput"] {
+            right: 1rem !important;
+            bottom: 0.9rem !important;
+            width: 3rem !important;
+        }
     }
     </style>
     """,
