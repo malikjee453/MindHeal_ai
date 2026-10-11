@@ -237,33 +237,43 @@ st.markdown(
         box-shadow: none !important;
     }
 
-    /* Let Streamlit control the native chat input's width and bottom docking.
-       Only position the microphone overlay, so the composer cannot collapse. */
-    [data-testid="stChatInput"] textarea { padding-right: 4.5rem !important; }
+    /* Overlay the microphone inside the left end of the bottom-docked chat composer. */
+    [data-testid="stChatInput"] textarea {
+        padding-left: 3.6rem !important;
+        padding-right: 3.5rem !important;
+    }
     div[data-testid="stAudioInput"] {
         position: fixed !important;
-        /* Align microphone with the left edge of the native chat composer. */
         left: max(16rem, calc((100vw - 48rem) / 2 + 1rem)) !important;
         right: auto !important;
-        bottom: 1.15rem !important;
-        width: 3.5rem !important;
+        /* Streamlit's chat composer sits above the viewport edge; match that baseline. */
+        bottom: 3.25rem !important;
+        width: 2.8rem !important;
+        height: 2.8rem !important;
+        overflow: hidden !important;
         z-index: 1002 !important;
         background: transparent !important;
     }
     div[data-testid="stAudioInput"] label { display: none !important; }
     div[data-testid="stAudioInput"] [data-testid="stFileUploaderDropzone"] {
-        min-height: 2.6rem !important;
-        padding: 0.15rem !important;
+        min-height: 2.8rem !important;
+        height: 2.8rem !important;
+        padding: 0 !important;
         border: 0 !important;
         background: transparent !important;
     }
-    div[data-testid="stAudioInput"] button { min-height: 2.3rem !important; }
+    div[data-testid="stAudioInput"] button { min-height: 2.5rem !important; }
     @media (max-width: 640px) {
+        [data-testid="stChatInput"] textarea {
+            padding-left: 3.3rem !important;
+            padding-right: 3.5rem !important;
+        }
         div[data-testid="stAudioInput"] {
             left: 1rem !important;
             right: auto !important;
-            bottom: 0.9rem !important;
-            width: 3rem !important;
+            bottom: 3.15rem !important;
+            width: 2.6rem !important;
+            height: 2.6rem !important;
         }
     }
     </style>
