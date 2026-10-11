@@ -38,6 +38,12 @@ def respond(user_text, response_style="short", response_language="English", memo
                 }
                 for item in web_results
             ])
+        else:
+            context = (context + "\\n\\n" if context else "") + (
+                "LIVE WEB SEARCH WAS REQUESTED BUT RETURNED NO USABLE RESULTS. "
+                "Do not pretend you searched or invent links. Be transparent that online "
+                "search is temporarily unavailable and ask for more details if needed."
+            )
 
     analysis = run_specialist(
         route.route,
