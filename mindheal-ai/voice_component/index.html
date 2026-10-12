@@ -102,8 +102,16 @@
     window.speechSynthesis.speak(utterance);
   }
 
+  let language = "en-US";
+  let recognition = null;
+  let active = false;
+  let finalText = "";
+  let lastSent = "";
+
   speakButton.addEventListener("click", () => speakReply(latestSpeakText, latestSpeakLanguage));
-  newChatButton.addEventListener("click", () => {
+  newChatButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
     if (active && recognition) {
       try { recognition.abort(); } catch (_) {}
       recognition = null;
@@ -111,6 +119,7 @@
     }
     input.value = "";
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    // Send an explicit action to Streamlit; Python clears session chat state.
     window.parent.postMessage({
       isStreamlitMessage: true,
       type: "streamlit:setComponentValue",
@@ -118,11 +127,6 @@
     }, "*");
     status.textContent = "Starting a new chat…";
   });
-  let language = "en-US";
-  let recognition = null;
-  let active = false;
-  let finalText = "";
-  let lastSent = "";
 
   function setActive(on) {
     active = on;
