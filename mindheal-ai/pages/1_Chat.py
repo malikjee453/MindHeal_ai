@@ -274,6 +274,32 @@ st.markdown(
         box-shadow: none !important;
     }
 
+    /* Native Streamlit New Chat button: reliable click handling outside the iframe. */
+    .st-key-mindheal_new_chat_native {
+        position: fixed !important;
+        right: max(7.5rem, calc((100vw - 48rem) / 2)) !important;
+        bottom: 4.45rem !important;
+        z-index: 1005 !important;
+        width: auto !important;
+        margin: 0 !important;
+    }
+    .st-key-mindheal_new_chat_native button {
+        min-height: 38px !important;
+        padding: 0 10px !important;
+        border: 1px solid #d6e2da !important;
+        border-radius: 9px !important;
+        color: #2f7655 !important;
+        background: #ffffff !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+    }
+    @media (max-width: 640px) {
+        .st-key-mindheal_new_chat_native {
+            right: 7.5rem !important;
+            bottom: 4.2rem !important;
+        }
+    }
+
     /* Overlay the microphone inside the left end of the bottom-docked chat composer. */
     [data-testid="stChatInput"] textarea {
         padding-left: 3.6rem !important;
@@ -376,6 +402,21 @@ for message in st.session_state.messages:
 # Unified chat composer: microphone and text input stay together.
 # Voice automatically submits after the browser detects the end of speech.
 # ---------------------------------------------------------
+
+# Use a native Streamlit button for New Chat so clicks always trigger a Python rerun.
+# It is visually positioned inside the composer, next to the send arrow.
+if st.button("New Chat", key="mindheal_new_chat_native", help="Clear this conversation and start a fresh one"):
+    st.session_state.messages = []
+    st.session_state["_mindheal_speak_latest"] = False
+    st.session_state.pop("_mindheal_last_composer_id", None)
+    st.session_state.pop("_mindheal_last_voice_transcript", None)
+    st.session_state.pop("_mindheal_last_new_chat_id", None)
+    if memory.logged_in():
+        try:
+            memory.clear_memory()
+        except Exception:
+            pass
+    st.rerun()
 
 prompt = None
 if VOICE_COMPONENT_READY:
