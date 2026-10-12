@@ -1,5 +1,4 @@
-import re
-from urllib.parse import quote, urlparse, parse_qs
+from urllib.parse import quote, urlparse
 
 import streamlit as st
 
@@ -14,20 +13,19 @@ h1,h2,h3 { color:#173B2D !important; }
 """, unsafe_allow_html=True)
 
 st.title("🎵 Music & Relaxation")
-st.write("Find music, play a supported link, or choose calming sounds for a quiet moment.")
-st.caption("Playback is provided by YouTube's embedded player. Availability and playback controls depend on the video's owner, region, and browser.")
+st.write("A lightweight audio player for music and calming sounds.")
+st.caption("For quick loading, this page uses an audio-only player. Provide a direct audio-file URL (such as MP3, WAV, or OGG) from a source that permits playback.")
 
-tab_search, tab_link, tab_relax = st.tabs(["🔎 Search songs", "▶️ Play a link", "🌿 Relaxation sounds"])
+tab_search, tab_audio, tab_relax = st.tabs(["🔎 Find music", "🎧 MP3 / audio player", "🌿 Relaxation sounds"])
 
 with tab_search:
-    st.subheader("Search by song or artist")
+    st.subheader("Find a song")
     with st.form("mindheal_music_search"):
-        query = st.text_input("Song, artist, or music style", placeholder="e.g. relaxing piano, Atif Aslam, lo-fi beats")
+        query = st.text_input("Song, artist, or music style", placeholder="e.g. Atif Aslam, relaxing piano, lo-fi beats")
         submitted = st.form_submit_button("Search YouTube", type="primary")
     if submitted and query.strip():
-        q = quote(query.strip())
-        st.markdown(f"[Open YouTube search results for **{query.strip()}**](https://www.youtube.com/results?search_query={q})")
-        st.info("Choose a video on YouTube, copy its URL, then paste it in the **Play a link** tab to play it here.")
+        st.link_button("Open song search results", "https://www.youtube.com/results?search_query=" + quote(query.strip()), use_container_width=True)
+        st.info("To play audio inside this lightweight player, use a direct MP3/audio-file URL in the next tab. YouTube watch links are video embeds and are not converted to MP3.")
     st.markdown("Popular searches")
     quick = [
         ("Calm piano", "calm relaxing piano music"),
@@ -40,49 +38,41 @@ with tab_search:
         with cols[i % 2]:
             st.link_button(label, "https://www.youtube.com/results?search_query=" + quote(q), use_container_width=True)
 
-with tab_link:
-    st.subheader("Play a YouTube link")
-    url = st.text_input("Paste a YouTube video URL", placeholder="https://www.youtube.com/watch?v=...")
-    if st.button("Load player", type="primary", key="mindheal_load_music"):
-        raw = url.strip()
-        parsed = urlparse(raw)
-        host = (parsed.hostname or "").lower()
-        video_id = ""
-        if host in {"youtu.be", "www.youtu.be"}:
-            video_id = parsed.path.strip("/").split("/")[0]
-        elif host.endswith("youtube.com") or host.endswith("youtube-nocookie.com"):
-            if parsed.path == "/watch":
-                video_id = parse_qs(parsed.query).get("v", [""])[0]
-            else:
-                match = re.match(r"^/(embed|shorts|live)/([A-Za-z0-9_-]{6,})", parsed.path)
-                if match:
-                    video_id = match.group(2)
-        if video_id and re.fullmatch(r"[A-Za-z0-9_-]{6,}", video_id):
-            st.session_state["mindheal_music_video_id"] = video_id
+with tab_audio:
+    st.subheader("Play an MP3 or audio stream")
+    audio_url = st.text_input(
+        "Direct audio URL",
+        placeholder="https://example.com/audio/song.mp3",
+        help="Use the direct URL to an audio file or stream, not a normal webpage or YouTube watch link.",
+    )
+    if st.button("Load audio", type="primary", key="mindheal_load_audio"):
+        parsed = urlparse(audio_url.strip())
+        if parsed.scheme in {"https", "http"} and parsed.netloc:
+            st.session_state["mindheal_audio_url"] = audio_url.strip()
         else:
-            st.error("Please enter a valid YouTube video, Shorts, or youtu.be link.")
-    video_id = st.session_state.get("mindheal_music_video_id")
-    if video_id:
-        st.video("https://www.youtube.com/watch?v=" + video_id)
-        st.caption("Use the player's own controls to play, pause, and adjust volume. Some videos may block embedding.")
-    st.markdown('<p class="music-note">Only public video links are supported here. This does not download or bypass restrictions on music.</p>', unsafe_allow_html=True)
+            st.error("Enter a valid http:// or https:// direct audio URL.")
+    saved_url = st.session_state.get("mindheal_audio_url", "")
+    if saved_url:
+        st.audio(saved_url)
+        st.caption("If playback fails, the host may block streaming or require a different direct audio URL.")
+    st.caption("Supported formats depend on the browser and source, commonly MP3, WAV, and OGG. The app does not download or convert songs.")
 
 with tab_relax:
     st.subheader("Relaxation sounds")
-    st.write("Pick a soundscape to find suitable public videos, then load your chosen video in the player.")
+    st.write("Find rain, ocean, forest, or meditation audio. Use a direct audio URL in the player to keep playback lightweight.")
     sounds = [
-        ("Rain on a window", "rain sounds on window 1 hour"),
-        ("Ocean waves", "ocean waves relaxing sounds"),
-        ("Forest birds", "forest birds nature sounds"),
+        ("Rain on a window", "rain sounds mp3 relaxation"),
+        ("Ocean waves", "ocean waves relaxing sounds audio"),
+        ("Forest birds", "forest birds nature sounds audio"),
         ("Gentle piano", "gentle piano meditation music"),
-        ("Meditation", "guided meditation relaxation music"),
-        ("Sleep ambience", "sleep ambience dark screen relaxing sounds"),
+        ("Meditation", "guided meditation relaxation audio"),
+        ("Sleep ambience", "sleep ambience relaxing audio"),
     ]
     cols = st.columns(2)
     for i, (label, q) in enumerate(sounds):
         with cols[i % 2]:
-            st.markdown('<div class="music-card"><strong>🌿 ' + label + '</strong><br><span class="music-note">Search public sound videos</span></div>', unsafe_allow_html=True)
-            st.link_button("Find " + label, "https://www.youtube.com/results?search_query=" + quote(q), use_container_width=True)
+            st.markdown('<div class="music-card"><strong>🌿 ' + label + '</strong><br><span class="music-note">Find suitable audio sources</span></div>', unsafe_allow_html=True)
+            st.link_button("Search " + label, "https://www.google.com/search?q=" + quote(q), use_container_width=True)
 
 st.divider()
 st.caption("MindHeal AI • Music can complement wellbeing practices, but it is not a substitute for professional care.")
