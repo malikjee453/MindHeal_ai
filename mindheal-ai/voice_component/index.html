@@ -120,7 +120,7 @@
     input.value = "";
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     // Send an explicit action to Streamlit; Python clears session chat state.
-    const newChatValue = { text: "/newchat", id: "new-" + Date.now().toString() };
+    const newChatValue = { action: "new_chat", text: "/newchat", id: "new-" + Date.now().toString() };
     // Notify Streamlit's component protocol and retain a local retry if rerun is delayed.
     window.parent.postMessage({
       isStreamlitMessage: true,
