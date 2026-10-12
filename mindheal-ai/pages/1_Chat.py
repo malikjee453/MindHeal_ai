@@ -398,26 +398,26 @@ if VOICE_COMPONENT_READY:
         st.session_state["_mindheal_speak_latest"] = False
     if isinstance(composer_result, dict):
         composer_id = str(composer_result.get("id", ""))
-        if composer_result.get("action") == "new_chat" and composer_id != st.session_state.get("_mindheal_last_new_chat_id"):
-            st.session_state["_mindheal_last_new_chat_id"] = composer_id
-            st.session_state.messages = []
-            st.session_state["_mindheal_speak_latest"] = False
-            st.session_state.pop("_mindheal_last_composer_id", None)
-            st.session_state.pop("_mindheal_last_voice_transcript", None)
-            if memory.logged_in():
-                memory.clear_memory()
-            st.rerun()
         composer_text = str(composer_result.get("text", "")).strip()
-        if composer_text.lower() == "/newchat" and composer_id != st.session_state.get("_mindheal_last_new_chat_id"):
+        is_new_chat = (
+            composer_result.get("action") == "new_chat"
+            or composer_text.lower() == "/newchat"
+            or composer_id.startswith("new-")
+        )
+        if is_new_chat and composer_id != st.session_state.get("_mindheal_last_new_chat_id"):
+            # Clear the current UI session first; persistent memory cleanup is best-effort.
             st.session_state["_mindheal_last_new_chat_id"] = composer_id
             st.session_state.messages = []
             st.session_state["_mindheal_speak_latest"] = False
             st.session_state.pop("_mindheal_last_composer_id", None)
             st.session_state.pop("_mindheal_last_voice_transcript", None)
             if memory.logged_in():
-                memory.clear_memory()
+                try:
+                    memory.clear_memory()
+                except Exception:
+                    pass
             st.rerun()
-        if composer_text and composer_id and composer_id != st.session_state.get("_mindheal_last_composer_id"):
+        if composer_text and composer_text.lower() != "/newchat" and composer_id and composer_id != st.session_state.get("_mindheal_last_composer_id"):
             st.session_state["_mindheal_last_composer_id"] = composer_id
             prompt = composer_text
     elif isinstance(composer_result, str) and composer_result.strip():
