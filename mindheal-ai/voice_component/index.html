@@ -143,6 +143,18 @@
     mic.title = on ? "Listening… pause to send automatically, or tap to cancel" : "Tap and speak; your message sends automatically after a pause";
   }
 
+  // Stop speaking the previous answer as soon as the user starts composing a follow-up.
+  function stopReplySpeech() {
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  }
+  input.addEventListener("focus", stopReplySpeech);
+  input.addEventListener("input", stopReplySpeech);
+  input.addEventListener("keydown", (event) => {
+    if (event.key.length === 1 || event.key === "Backspace" || event.key === "Delete") {
+      stopReplySpeech();
+    }
+  });
+
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     const text = input.value.trim();
