@@ -377,7 +377,9 @@ for message in st.session_state.messages:
 # Voice automatically submits after the browser detects the end of speech.
 # ---------------------------------------------------------
 
-prompt = None
+# Use Streamlit's native chat input for typed messages on every turn.
+# The browser component remains responsible for microphone capture and speech playback.
+prompt = st.chat_input("What's on your mind?")
 if VOICE_COMPONENT_READY:
     _speak_latest = bool(st.session_state.get("_mindheal_speak_latest", False))
     _latest_answer = ""
@@ -419,15 +421,17 @@ if VOICE_COMPONENT_READY:
             st.rerun()
         if composer_text and composer_text.lower() != "/newchat" and composer_id and composer_id != st.session_state.get("_mindheal_last_composer_id"):
             st.session_state["_mindheal_last_composer_id"] = composer_id
-            prompt = composer_text
+            # The component is used for voice transcripts; typed text comes from st.chat_input.
+            if not prompt:
+                prompt = composer_text
     elif isinstance(composer_result, str) and composer_result.strip():
         # Backward compatibility with an older version of the voice component.
         if composer_result != st.session_state.get("_mindheal_last_voice_transcript"):
             st.session_state["_mindheal_last_voice_transcript"] = composer_result
-            prompt = composer_result
+            if not prompt:
+                prompt = composer_result
 else:
     st.caption("Voice composer is temporarily unavailable. You can type a message below.")
-    prompt = st.chat_input("What's on your mind?")
 
 if prompt:
 
