@@ -4,6 +4,7 @@ from agents.composer import compose_response
 from core.safety import assess_safety, CRISIS_RESPONSE
 from rag.retriever import retrieve_context
 from core.web_search import needs_web_search, search_web, clean_search_query
+from core.groq_client import chat as llm_chat
 
 
 def is_conversational_follow_up(text):
@@ -21,6 +22,26 @@ def respond(user_text, response_style="short", response_language="English", memo
     safety = assess_safety(user_text)
     if safety.level == "crisis":
         return CRISIS_RESPONSE, [], "CRISIS"
+
+    # Fast path: follow-ups use one model call and skip search, retrieval, and composition.
+    follow_up = is_conversational_follow_up(user_text) and bool(conversation_context)
+    if follow_up:
+        language_rule = "Answer in natural Pakistani Urdu script." if str(response_language).lower().startswith("urdu") else "Answer in English."
+        length_rule = "Use about 120-200 words." if response_style == "detailed" else "Use 2-4 concise sentences, about 35-65 words."
+        answer = llm_chat(
+            [
+                {"role": "system", "content": (
+                    "You are MindHeal AI, a warm, practical conversational assistant. "
+                    "Answer the latest follow-up directly using the recent conversation. "
+                    "Add a genuinely new useful point and avoid repeating prior advice. "
+                    "Do not search the web or mention internal tools. " + language_rule + " " + length_rule
+                )},
+                {"role": "user", "content": "Recent conversation:\\n" + conversation_context + "\\n\\nLatest user message: " + user_text},
+            ],
+            temperature=0.5,
+            max_tokens=260 if response_style == "detailed" else 120,
+        )
+        return answer, [], "FOLLOW_UP"
 
     web_requested = needs_web_search(user_text)
     search_query = clean_search_query(user_text) if web_requested else user_text
@@ -58,20 +79,8 @@ def respond(user_text, response_style="short", response_language="English", memo
                 "search is temporarily unavailable and ask for more details if needed."
             )
 
-    # Follow-ups should use the recent conversation directly, not trigger web
-    # search or a second specialist call. This reduces latency and rate-limit risk.
-    follow_up = is_conversational_follow_up(user_text) and bool(conversation_context)
-
-    # Web-search requests already have source snippets, so skip the separate
-    # specialist LLM call and save one full model round-trip.
-    if follow_up:
-        analysis = (
-            "This is a conversational follow-up. Answer the user's latest question "
-            "directly using the recent conversation below. Add a genuinely new useful "
-            "point rather than repeating earlier advice. Do not perform web search.\n\n"
-            + conversation_context
-        )
-    elif web_requested:
+    # Web-search requests use their supplied snippets without a specialist call.
+    if web_requested:
         analysis = (
             "You are answering a general web-search request inside a conversational chatbot. "
             "Use the user's recent conversation to resolve follow-up references. Summarize "
