@@ -377,7 +377,8 @@ if VOICE_COMPONENT_READY:
         speakText=_latest_answer,
         speakId=str(len(st.session_state.messages)) if _latest_answer else "",
         speakLanguage="ur-PK" if str(st.session_state.get("language", "English")).lower().startswith("urdu") else "en-US",
-        key="mindheal_browser_voice",
+        # Recreate the component after each completed turn so stale component values cannot block later sends.
+        key=f"mindheal_browser_voice_{len(st.session_state.messages)}",
         default=None,
     )
     if _speak_latest:
