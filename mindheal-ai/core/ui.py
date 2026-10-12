@@ -8,7 +8,7 @@ def render_header(name, tagline, builder):
 
 
 def render_disclaimer():
-    with st.expander("Important wellbeing note"):
+    with st.sidebar.expander("Important wellbeing note"):
         st.write(
             "MindHeal AI provides general emotional-support and "
             "educational information. It is not a replacement for "
