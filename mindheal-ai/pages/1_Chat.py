@@ -377,19 +377,6 @@ for message in st.session_state.messages:
 # Voice automatically submits after the browser detects the end of speech.
 # ---------------------------------------------------------
 
-if st.button("New Chat", key="mindheal_new_chat_native", help="Clear this conversation and start a fresh one"):
-    st.session_state.messages = []
-    st.session_state["_mindheal_speak_latest"] = False
-    st.session_state.pop("_mindheal_last_composer_id", None)
-    st.session_state.pop("_mindheal_last_voice_transcript", None)
-    st.session_state.pop("_mindheal_last_new_chat_id", None)
-    if memory.logged_in():
-        try:
-            memory.clear_memory()
-        except Exception:
-            pass
-    st.rerun()
-
 prompt = None
 if VOICE_COMPONENT_READY:
     _speak_latest = bool(st.session_state.get("_mindheal_speak_latest", False))
