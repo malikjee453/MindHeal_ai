@@ -6,6 +6,17 @@ from rag.retriever import retrieve_context
 from core.web_search import needs_web_search, search_web, clean_search_query
 
 
+def is_conversational_follow_up(text):
+    value = " ".join(str(text or "").lower().split()).strip(" .!?")
+    starters = (
+        "any other tip", "any other tips", "any more tips", "any other advice",
+        "anything else", "what else", "tell me more", "explain more", "go on",
+        "continue", "why", "how so", "what do you mean", "can you elaborate",
+        "another tip", "more advice", "and then", "what about that",
+    )
+    return any(value == phrase or value.startswith(phrase + " ") for phrase in starters)
+
+
 def respond(user_text, response_style="short", response_language="English", memory_context="", conversation_context=""):
     safety = assess_safety(user_text)
     if safety.level == "crisis":
@@ -47,9 +58,20 @@ def respond(user_text, response_style="short", response_language="English", memo
                 "search is temporarily unavailable and ask for more details if needed."
             )
 
+    # Follow-ups should use the recent conversation directly, not trigger web
+    # search or a second specialist call. This reduces latency and rate-limit risk.
+    follow_up = is_conversational_follow_up(user_text) and bool(conversation_context)
+
     # Web-search requests already have source snippets, so skip the separate
     # specialist LLM call and save one full model round-trip.
-    if web_requested:
+    if follow_up:
+        analysis = (
+            "This is a conversational follow-up. Answer the user's latest question "
+            "directly using the recent conversation below. Add a genuinely new useful "
+            "point rather than repeating earlier advice. Do not perform web search.\n\n"
+            + conversation_context
+        )
+    elif web_requested:
         analysis = (
             "You are answering a general web-search request inside a conversational chatbot. "
             "Use the user's recent conversation to resolve follow-up references. Summarize "
