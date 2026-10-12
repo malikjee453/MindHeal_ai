@@ -139,6 +139,21 @@ st.markdown(
         margin-top: 10px;
     }
 
+    .mb-mission {
+        margin: 18px 0 8px 0;
+        padding: 16px 18px;
+        border-left: 4px solid #438B66;
+        border-radius: 10px;
+        background: #F2F7F3;
+        color: #294A38 !important;
+        line-height: 1.65;
+        font-size: 1rem;
+    }
+
+    .mb-mission strong {
+        color: #173B2D !important;
+    }
+
 
     /* =====================================================
        BUILDER
@@ -325,6 +340,16 @@ st.markdown(
 st.write(
     "Type your question or share what is on your mind. "
     "You can ask me to answer in English or Urdu."
+)
+
+st.markdown(
+    '<div class="mb-mission">'
+    '<strong>Free support, whenever you need a place to start.</strong><br>'
+    'MindHeal AI is here to offer a kind, private-feeling space for reflection and ' 
+    'evidence-informed self-help. You do not have to face every difficult thought alone. ' 
+    'Help us spread the word so more people can find this free resource.'
+    '</div>',
+    unsafe_allow_html=True,
 )
 
 
