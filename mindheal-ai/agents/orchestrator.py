@@ -24,7 +24,22 @@ def respond(user_text, response_style="short", response_language="English", memo
         return CRISIS_RESPONSE, [], "CRISIS"
 
     # Fast path: follow-ups use one model call and skip search, retrieval, and composition.
-    follow_up = is_conversational_follow_up(user_text) and bool(conversation_context)
+    # Treat short contextual messages as follow-ups too, even when wording changes.
+    # This prevents a third/fourth follow-up from falling back into slow search/RAG.
+    normalized_user_text = " ".join(str(user_text or "").lower().split()).strip(" .!?")
+    explicit_search = normalized_user_text.startswith(("/search ", "search: ", "web: "))
+    short_contextual_message = (
+        bool(conversation_context)
+        and len(normalized_user_text.split()) <= 12
+        and not explicit_search
+        and not any(term in normalized_user_text for term in (
+            "latest news", "today's", "right now", "current price", "live score",
+            "weather in", "exchange rate", "breaking news",
+        ))
+    )
+    follow_up = bool(conversation_context) and (
+        is_conversational_follow_up(user_text) or short_contextual_message
+    )
     if follow_up:
         language_rule = "Answer in natural Pakistani Urdu script." if str(response_language).lower().startswith("urdu") else "Answer in English."
         length_rule = "Use about 120-200 words." if response_style == "detailed" else "Use 2-4 concise sentences, about 35-65 words."
