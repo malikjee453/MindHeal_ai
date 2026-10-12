@@ -3,7 +3,7 @@ from agents.specialists import run_specialist
 from agents.composer import compose_response
 from core.safety import assess_safety, CRISIS_RESPONSE
 from rag.retriever import retrieve_context
-from core.web_search import needs_web_search, search_web
+from core.web_search import needs_web_search, search_web, clean_search_query
 
 
 def respond(user_text, response_style="short", response_language="English", memory_context="", conversation_context=""):
@@ -11,14 +11,15 @@ def respond(user_text, response_style="short", response_language="English", memo
     if safety.level == "crisis":
         return CRISIS_RESPONSE, [], "CRISIS"
 
+    web_requested = needs_web_search(user_text)
+    search_query = clean_search_query(user_text) if web_requested else user_text
     route = route_message(user_text)
     context, sources = retrieve_context(user_text)
 
-    # Search the public web only when the user asks for current/online information.
-    # Search snippets are untrusted reference material, not instructions.
-    web_requested = needs_web_search(user_text)
+    # The normal chat box also acts as a general web-search chatbot. Search results
+    # are untrusted reference material, never instructions.
     if web_requested:
-        web_results = search_web(user_text, max_results=3)
+        web_results = search_web(search_query, max_results=5)
         if web_results:
             web_context = "\n\n".join(
                 f"[WEB RESULT {i + 1}]\nTitle: {item['title']}\n"
@@ -50,10 +51,12 @@ def respond(user_text, response_style="short", response_language="English", memo
     # specialist LLM call and save one full model round-trip.
     if web_requested:
         analysis = (
-            "Answer the user's online-search request directly from the supplied "
-            "web results and any relevant knowledge context. Summarize the findings, "
-            "include clickable source links, and be transparent if search returned "
-            "no usable results. Do not reproduce full copyrighted song lyrics.\n\n"
+            "You are answering a general web-search request inside a conversational chatbot. "
+            "Use the user's recent conversation to resolve follow-up references. Summarize "
+            "the most useful findings from the supplied results, distinguish source facts "
+            "from inference, and include clickable source links. If the search failed, "
+            "say so plainly and never invent results. Do not reproduce full copyrighted "
+            "song lyrics; link to legitimate lyric sources and summarize the meaning instead.\n\n"
             + (context or "No web results were available.")
         )
     else:
