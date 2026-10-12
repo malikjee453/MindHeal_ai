@@ -95,9 +95,16 @@ def needs_web_search(text):
     follow_ups = (
         "why?", "why", "how so?", "how so", "tell me more", "explain more",
         "what about it?", "what about it", "and then?", "and then",
-        "what do you mean?", "what do you mean",
+        "what do you mean?", "what do you mean", "any other tip", "any other tips",
+        "any more tips", "anything else", "what else", "another tip", "more advice",
+        "can you elaborate", "go on", "continue",
     )
-    if value in follow_ups:
+    if value in follow_ups or any(
+        value.startswith(prefix) for prefix in (
+            "any other tip", "any other tips", "any more tips", "anything else",
+            "what else", "another tip", "more advice", "can you elaborate",
+        )
+    ):
         return False
 
     # Explicit commands are searchable; other substantive prompts default to
