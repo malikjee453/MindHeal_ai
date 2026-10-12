@@ -68,15 +68,41 @@ def search_web(query, max_results=3):
 
 
 def needs_web_search(text):
-    """Search only when the user clearly asks for online/current information."""
-    value = str(text or "").lower()
-    phrases = (
-        "search the web", "search online", "look online", "find online",
-        "on the internet", "from the internet", "latest news", "current news",
-        "latest research", "recent research", "current information",
-        "look up", "find sources", "give me sources", "website for",
-        "song lyrics", "lyrics of", "lyrics for", "find lyrics", "lyric of",
-        "who won today", "today's news", "today news", "recent update",
-        "latest update", "current price", "as of today", "find the lyrics",
+    """Automatically search factual/general queries entered in the normal chat box.
+
+    Keep personal emotional-support conversations and short conversational follow-ups
+    model-led so they are not delayed by an unnecessary network request.
+    """
+    value = " ".join(str(text or "").lower().split())
+    if not value:
+        return False
+
+    # Personal-support statements should remain conversational, not trigger web search.
+    support_phrases = (
+        "i feel ", "i am feeling", "i'm feeling", "i feel like",
+        "i am sad", "i'm sad", "i am lonely", "i'm lonely",
+        "i feel lonely", "i feel sad", "i feel anxious", "i feel scared",
+        "i am afraid", "i'm afraid", "i regret", "i was rejected",
+        "my relationship", "my family", "my friend hates", "i need someone",
+        "i just want to talk", "can i talk", "help me calm down",
+        "i am stressed", "i'm stressed", "i feel overwhelmed",
     )
-    return any(phrase in value for phrase in phrases)
+    if any(phrase in value for phrase in support_phrases):
+        return False
+
+    # Short follow-ups rely on recent chat context; searching them alone is unhelpful.
+    if len(value.split()) <= 3 and not value.startswith(("/search", "search:", "web:")):
+        return False
+
+    # Explicit commands are always searchable; other substantive prompts default to
+    # online lookup so the same chat box works as a general search chatbot.
+    return True
+
+
+def clean_search_query(text):
+    """Remove chat-command prefixes before sending a query to the search engine."""
+    value = " ".join(str(text or "").split())
+    for prefix in ("/search", "search:", "web:"):
+        if value.lower().startswith(prefix):
+            return value[len(prefix):].strip()
+    return value
