@@ -120,12 +120,20 @@
     input.value = "";
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     // Send an explicit action to Streamlit; Python clears session chat state.
+    const newChatValue = { action: "new_chat", id: "new-" + Date.now().toString() };
+    // Notify Streamlit's component protocol and retain a local retry if rerun is delayed.
     window.parent.postMessage({
       isStreamlitMessage: true,
       type: "streamlit:setComponentValue",
-      value: { action: "new_chat", id: "new-" + Date.now().toString() }
+      value: newChatValue
     }, "*");
     status.textContent = "Starting a new chat…";
+    newChatButton.disabled = true;
+    newChatButton.textContent = "Starting…";
+    setTimeout(() => {
+      newChatButton.disabled = false;
+      newChatButton.textContent = "New Chat";
+    }, 1800);
   });
 
   function setActive(on) {
