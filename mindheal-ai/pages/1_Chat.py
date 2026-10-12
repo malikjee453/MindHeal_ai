@@ -274,42 +274,26 @@ st.markdown(
         box-shadow: none !important;
     }
 
-    /* Overlay the microphone inside the left end of the bottom-docked chat composer. */
-    [data-testid="stChatInput"] textarea {
-        padding-left: 3.6rem !important;
-        padding-right: 3.5rem !important;
-    }
+    /* Single full-width custom chat composer. */
+    [data-testid="stChatInput"] { display: none !important; }
     div[data-testid="stCustomComponent"] {
         position: fixed !important;
         left: max(17.5rem, calc((100vw - 48rem) / 2 + 1.5rem)) !important;
         bottom: 4.45rem !important;
-        width: 2.8rem !important;
-        height: 2.8rem !important;
-        overflow: visible !important;
-        z-index: 1002 !important;
-        background: transparent !important;
+        width: min(48rem, calc(100vw - 20rem)) !important;
+        height: 62px !important; overflow: visible !important;
+        z-index: 1002 !important; background: transparent !important;
     }
     div[data-testid="stCustomComponent"] iframe {
-        width: 2.8rem !important;
-        height: 2.8rem !important;
-        border: 0 !important;
-        background: transparent !important;
+        width: 100% !important; height: 62px !important;
+        border: 0 !important; background: transparent !important;
     }
     @media (max-width: 640px) {
-        [data-testid="stChatInput"] textarea {
-            padding-left: 3.3rem !important;
-            padding-right: 3.5rem !important;
-        }
         div[data-testid="stCustomComponent"] {
-            left: 1.35rem !important;
-            bottom: 4.2rem !important;
-            width: 2.6rem !important;
-            height: 2.6rem !important;
+            left: 0.75rem !important; bottom: 4.2rem !important;
+            width: calc(100vw - 1.5rem) !important; height: 62px !important;
         }
-        div[data-testid="stCustomComponent"] iframe {
-            width: 2.6rem !important;
-            height: 2.6rem !important;
-        }
+        div[data-testid="stCustomComponent"] iframe { width: 100% !important; height: 62px !important; }
     }
     </style>
     """,
@@ -379,7 +363,7 @@ for message in st.session_state.messages:
 
 # Use Streamlit's native chat input for typed messages on every turn.
 # The browser component remains responsible for microphone capture and speech playback.
-prompt = st.chat_input("What's on your mind?")
+prompt = None
 if VOICE_COMPONENT_READY:
     _speak_latest = bool(st.session_state.get("_mindheal_speak_latest", False))
     _latest_answer = ""
