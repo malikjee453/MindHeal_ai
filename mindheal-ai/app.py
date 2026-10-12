@@ -140,14 +140,14 @@ st.markdown(
     }
 
     .mb-mission {
-        margin: 18px 0 8px 0;
-        padding: 16px 18px;
-        border-left: 4px solid #438B66;
-        border-radius: 10px;
+        margin: 12px 0 6px 0;
+        padding: 10px 14px;
+        border-left: 3px solid #438B66;
+        border-radius: 8px;
         background: #F2F7F3;
         color: #294A38 !important;
-        line-height: 1.65;
-        font-size: 1rem;
+        line-height: 1.45;
+        font-size: 0.9rem;
     }
 
     .mb-mission strong {
@@ -344,10 +344,8 @@ st.write(
 
 st.markdown(
     '<div class="mb-mission">'
-    '<strong>Free support, whenever you need a place to start.</strong><br>'
-    'MindHeal AI is here to offer a kind, private-feeling space for reflection and ' 
-    'evidence-informed self-help. You do not have to face every difficult thought alone. ' 
-    'Help us spread the word so more people can find this free resource.'
+    '<strong>Free support, whenever you need it.</strong> '
+    'Talk things through, explore your thoughts, and take one small step forward.'
     '</div>',
     unsafe_allow_html=True,
 )
