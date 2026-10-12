@@ -2,7 +2,8 @@ import os
 from groq import Groq
 from core.config import GROQ_MODEL
 
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+# Bound request time so a transient provider delay cannot leave the UI spinning forever.
+client = Groq(api_key=os.getenv("GROQ_API_KEY"), timeout=30.0, max_retries=1)
 
 
 def chat(messages, temperature=0.7, **kwargs):
