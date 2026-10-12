@@ -408,6 +408,15 @@ if VOICE_COMPONENT_READY:
                 memory.clear_memory()
             st.rerun()
         composer_text = str(composer_result.get("text", "")).strip()
+        if composer_text.lower() == "/newchat" and composer_id != st.session_state.get("_mindheal_last_new_chat_id"):
+            st.session_state["_mindheal_last_new_chat_id"] = composer_id
+            st.session_state.messages = []
+            st.session_state["_mindheal_speak_latest"] = False
+            st.session_state.pop("_mindheal_last_composer_id", None)
+            st.session_state.pop("_mindheal_last_voice_transcript", None)
+            if memory.logged_in():
+                memory.clear_memory()
+            st.rerun()
         if composer_text and composer_id and composer_id != st.session_state.get("_mindheal_last_composer_id"):
             st.session_state["_mindheal_last_composer_id"] = composer_id
             prompt = composer_text
