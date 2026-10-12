@@ -398,6 +398,15 @@ if VOICE_COMPONENT_READY:
         st.session_state["_mindheal_speak_latest"] = False
     if isinstance(composer_result, dict):
         composer_id = str(composer_result.get("id", ""))
+        if composer_result.get("action") == "new_chat" and composer_id != st.session_state.get("_mindheal_last_new_chat_id"):
+            st.session_state["_mindheal_last_new_chat_id"] = composer_id
+            st.session_state.messages = []
+            st.session_state["_mindheal_speak_latest"] = False
+            st.session_state.pop("_mindheal_last_composer_id", None)
+            st.session_state.pop("_mindheal_last_voice_transcript", None)
+            if memory.logged_in():
+                memory.clear_memory()
+            st.rerun()
         composer_text = str(composer_result.get("text", "")).strip()
         if composer_text and composer_id and composer_id != st.session_state.get("_mindheal_last_composer_id"):
             st.session_state["_mindheal_last_composer_id"] = composer_id
