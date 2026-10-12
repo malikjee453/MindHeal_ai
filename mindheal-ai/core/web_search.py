@@ -90,11 +90,17 @@ def needs_web_search(text):
     if any(phrase in value for phrase in support_phrases):
         return False
 
-    # Short follow-ups rely on recent chat context; searching them alone is unhelpful.
-    if len(value.split()) <= 3 and not value.startswith(("/search", "search:", "web:")):
+    # Only obvious conversational follow-ups skip search; short factual queries
+    # such as "who is Einstein" should still search the web.
+    follow_ups = (
+        "why?", "why", "how so?", "how so", "tell me more", "explain more",
+        "what about it?", "what about it", "and then?", "and then",
+        "what do you mean?", "what do you mean",
+    )
+    if value in follow_ups:
         return False
 
-    # Explicit commands are always searchable; other substantive prompts default to
+    # Explicit commands are searchable; other substantive prompts default to
     # online lookup so the same chat box works as a general search chatbot.
     return True
 
