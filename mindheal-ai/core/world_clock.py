@@ -59,12 +59,12 @@ def render_world_clock():
             const period = parts.find(p => p.type === "dayPeriod")?.value || "";
             timeEl.innerHTML = hour + ":" + minute +
               ' <span class="ampm">' + period + "</span>";
-            dateEl.textContent = new Intl.DateTimeFormat("en-US", {
-              timeZone: zone, month: "2-digit", day: "2-digit", year: "numeric"
-            }).format(now);
+            dateEl.textContent = new Intl.DateTimeFormat("en-GB", {
+              timeZone: zone, day: "2-digit", month: "short", year: "2-digit"
+            }).format(now).replace(/ /g, "-");
           } catch (err) {
             timeEl.textContent = now.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
-            dateEl.textContent = now.toLocaleDateString("en-US");
+            dateEl.textContent = now.toLocaleDateString("en-GB", {day:"2-digit", month:"short", year:"2-digit"}).replace(/ /g, "-");
           }
         }
 
