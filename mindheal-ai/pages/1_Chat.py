@@ -531,22 +531,15 @@ if prompt:
         }
     )
 
-    # Persistent storage is strictly opt-in. Summarize in the background every few turns.
+    # Save turns only after the reply is complete. Avoid a second LLM call here:
+    # that extra summarization request could make the third exchange appear stuck.
     if memory.logged_in() and st.session_state.get("mindheal_memory_enabled"):
-        memory.save_turn("user", prompt)
-        memory.save_turn("assistant", answer)
-        saved = memory.recent_turns(limit=120)
-        if len(saved) >= 6 and len(saved) % 6 == 0:
-            profile = memory.load_profile() or {}
-            transcript = "\n".join(f"{row['role']}: {row['content']}" for row in saved[-12:])
-            try:
-                summary = llm_chat([
-                    {"role": "system", "content": "Create a brief, factual private memory summary for continuity in an emotional-support app. Keep only user-stated name/preferences, ongoing goals, recurring themes, helpful strategies, and meaningful changes over time. Do not diagnose or infer sensitive traits. Do not include unnecessary identifying details. Maximum 180 words. If uncertain, say so."},
-                    {"role": "user", "content": f"Existing summary:\n{profile.get('memory_summary','')}\n\nRecent conversation:\n{transcript}\n\nWrite an updated concise summary."}
-                ], temperature=0.2)
-                memory.save_profile(memory_summary=summary[:3000])
-            except Exception:
-                pass
+        try:
+            memory.save_turn("user", prompt)
+            memory.save_turn("assistant", answer)
+        except Exception:
+            # Chat should remain usable even if optional persistent memory is unavailable.
+            pass
 
     # Trigger a fresh component render so the latest reply is spoken once.
     st.session_state["_mindheal_speak_latest"] = True
