@@ -219,50 +219,50 @@ st.markdown(
        START CONVERSATION BUTTON
        ===================================================== */
 
-    div.stButton > button {
-        background: linear-gradient(
-            135deg,
-            #2F7655,
-            #438B66
-        ) !important;
-
+    .st-key-start_conversation button {
+        background: linear-gradient(135deg, #2F7655, #438B66) !important;
         color: white !important;
-
         border: none !important;
-        border-radius: 14px !important;
-
-        min-height: 68px !important;
-        min-width: 320px !important;
-
-        padding: 12px 28px !important;
-
-        box-shadow:
-            0 8px 20px rgba(47, 118, 85, 0.22);
-
-        transition: all 0.2s ease;
+        border-radius: 9px !important;
+        min-height: 42px !important;
+        min-width: 0 !important;
+        width: auto !important;
+        padding: 8px 16px !important;
+        box-shadow: 0 4px 12px rgba(47, 118, 85, 0.16);
+        transition: background 0.2s ease;
     }
 
-    div.stButton > button p {
-        font-size: 2rem !important;
-        font-weight: 700 !important;
+    .st-key-start_conversation button p {
+        font-size: 1.05rem !important;
+        font-weight: 650 !important;
         color: white !important;
         line-height: 1.2 !important;
         margin: 0 !important;
+        white-space: nowrap !important;
     }
 
-    div.stButton > button:hover {
-        background: linear-gradient(
-            135deg,
-            #286648,
-            #397A59
-        ) !important;
-
+    .st-key-start_conversation button:hover {
+        background: linear-gradient(135deg, #286648, #397A59) !important;
         color: white !important;
+    }
 
-        transform: translateY(-2px);
+    [data-testid="stSidebarNav"] [data-testid="stSidebarNavLink"] {
+        display: inline-flex !important;
+        width: fit-content !important;
+        max-width: 100% !important;
+        padding: 0.35rem 0.55rem !important;
+        margin: 0.08rem 0 !important;
+        border-radius: 7px !important;
+    }
 
-        box-shadow:
-            0 12px 26px rgba(47, 118, 85, 0.30);
+    [data-testid="stSidebarNav"] [data-testid="stSidebarNavLink"] p {
+        white-space: nowrap !important;
+        font-size: 0.86rem !important;
+        margin: 0 !important;
+    }
+
+    [data-testid="stSidebarNav"] ul {
+        gap: 0.1rem !important;
     }
 
 
