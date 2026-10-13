@@ -246,102 +246,60 @@ st.markdown(
         color: white !important;
     }
 
-    /* Center the sidebar's full content area and all its children. */
+    /* Keep the sidebar itself compact and make every navigation button
+       occupy only the width its label needs. */
     [data-testid="stSidebar"] {
+        min-width: 0 !important;
         width: 190px !important;
-        min-width: 190px !important;
-        max-width: 190px !important;
+        flex: 0 0 190px !important;
     }
 
-    [data-testid="stSidebar"] > div,
-    [data-testid="stSidebar"] [data-testid="stSidebarContent"],
-    [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
-        width: 100% !important;
-        box-sizing: border-box !important;
-        padding-left: 0.45rem !important;
-        padding-right: 0.45rem !important;
+    [data-testid="stSidebar"] > div {
+        width: 190px !important;
     }
 
     [data-testid="stSidebar"] [data-testid="stSidebarContent"] {
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        text-align: center !important;
+        padding-left: 0.55rem !important;
+        padding-right: 0.35rem !important;
     }
 
-    /* Streamlit page navigation uses full-width list rows by default.
-       Center the row contents while keeping the active background compact. */
-    [data-testid="stSidebarNav"] {
-        width: 100% !important;
-        margin: 0 auto !important;
+    [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
     }
 
-    [data-testid="stSidebarNav"] ul {
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        width: 100% !important;
-        padding: 0 !important;
-        margin: 0 auto !important;
-        gap: 0.12rem !important;
-    }
-
-    [data-testid="stSidebarNav"] li {
-        display: flex !important;
-        justify-content: center !important;
-        width: 100% !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-
-    [data-testid="stSidebarNav"] a {
-        display: inline-flex !important;
-        justify-content: center !important;
-        align-items: center !important;
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] {
         width: fit-content !important;
         max-width: 100% !important;
-        margin: 0 auto !important;
-        padding: 0.35rem 0.5rem !important;
+    }
+
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] ul {
+        align-items: flex-start !important;
+        gap: 0.12rem !important;
+        width: 100% !important;
+    }
+
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] li {
+        width: fit-content !important;
+        max-width: 100% !important;
+    }
+
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] a {
+        display: inline-flex !important;
+        width: fit-content !important;
+        max-width: 100% !important;
         box-sizing: border-box !important;
+        padding: 0.32rem 0.5rem !important;
+        margin: 0.06rem 0 !important;
         border-radius: 7px !important;
     }
 
-    [data-testid="stSidebarNav"] a p {
-        width: auto !important;
-        text-align: center !important;
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] a p {
         white-space: nowrap !important;
-        margin: 0 !important;
         font-size: 0.86rem !important;
+        margin: 0 !important;
     }
 
-    [data-testid="stSidebar"] [data-testid="stElementContainer"],
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"],
-    [data-testid="stSidebar"] [data-testid="stButton"],
-    [data-testid="stSidebar"] .st-key-local_clock,
-    [data-testid="stSidebar"] .st-key-sidebar_clock,
-    [data-testid="stSidebar"] [data-testid="stAlert"] {
-        margin-left: auto !important;
-        margin-right: auto !important;
-        text-align: center !important;
-    }
-
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h1,
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h2,
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3 {
-        text-align: center !important;
-    }
-
-    [data-testid="stSidebar"] [data-testid="stButton"] button {
-        margin-left: auto !important;
-        margin-right: auto !important;
-    }
-
-    [data-testid="stSidebar"] .st-key-local_clock > div,
-    [data-testid="stSidebar"] .st-key-sidebar_clock > div {
-        margin-left: auto !important;
-        margin-right: auto !important;
-    }
 
     /* =====================================================
        DISCLAIMER
