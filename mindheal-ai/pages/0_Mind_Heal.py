@@ -250,6 +250,22 @@ st.markdown(
        occupy only the width its label needs. */
     [data-testid="stSidebar"] {
         min-width: 0 !important;
+        width: 190px !important;
+        flex: 0 0 190px !important;
+    }
+
+    [data-testid="stSidebar"] > div {
+        width: 190px !important;
+    }
+
+    [data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+        padding-left: 0.55rem !important;
+        padding-right: 0.35rem !important;
+    }
+
+    [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
     }
 
     [data-testid="stSidebar"] [data-testid="stSidebarNav"] {
