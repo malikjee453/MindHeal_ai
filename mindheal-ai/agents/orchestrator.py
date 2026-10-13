@@ -5,6 +5,8 @@ from core.safety import assess_safety, CRISIS_RESPONSE
 from rag.retriever import retrieve_context
 from core.web_search import needs_web_search, search_web, clean_search_query
 from core.groq_client import chat as llm_chat
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 
 def is_conversational_follow_up(text):
@@ -19,6 +21,42 @@ def is_conversational_follow_up(text):
 
 
 def respond(user_text, response_style="short", response_language="English", memory_context="", conversation_context=""):
+    # Resolve explicit current time/date questions deterministically in the requested timezone.
+    # This must run before the short-follow-up shortcut, which otherwise skips live lookup.
+    normalized = " ".join(str(user_text or "").lower().split()).strip(" .!?")
+    time_intents = (
+        "what time", "current time", "time is it", "time in ", "clock in ",
+        "what day", "which day", "what date", "today's date", "date today",
+        "day is it", "date is it",
+    )
+    if any(term in normalized for term in time_intents):
+        timezone_name = "Asia/Karachi"
+        city_name = "Karachi"
+        if "lahore" in normalized:
+            city_name = "Lahore"
+        elif "islamabad" in normalized:
+            city_name = "Islamabad"
+        elif "london" in normalized:
+            city_name, timezone_name = "London", "Europe/London"
+        elif "new york" in normalized:
+            city_name, timezone_name = "New York", "America/New_York"
+        elif "tokyo" in normalized:
+            city_name, timezone_name = "Tokyo", "Asia/Tokyo"
+        elif "dubai" in normalized:
+            city_name, timezone_name = "Dubai", "Asia/Dubai"
+        now = datetime.now(ZoneInfo(timezone_name))
+        if any(term in normalized for term in ("what day", "which day", "day is it")):
+            answer = f"It is {now.strftime('%A')}, {now.strftime('%B')} {now.day}, {now.year} in {city_name}."
+        elif any(term in normalized for term in ("what date", "today's date", "date today", "date is it")):
+            answer = f"Today's date in {city_name} is {now.strftime('%B')} {now.day}, {now.year}."
+        else:
+            answer = f"The current time in {city_name} is {now.strftime('%I:%M %p').lstrip('0')} (UTC{now.strftime('%z')[:3]}:{now.strftime('%z')[3:]})."
+        if str(response_language).lower().startswith("urdu"):
+            answer = llm_chat([
+                {"role": "system", "content": "Translate the following factual answer into natural Pakistani Urdu script. Preserve the time, date, city, and timezone exactly. Reply only with the translation."},
+                {"role": "user", "content": answer},
+            ], temperature=0.1, max_tokens=100)
+        return answer, [], "LIVE_TIME"
     safety = assess_safety(user_text)
     if safety.level == "crisis":
         return CRISIS_RESPONSE, [], "CRISIS"
