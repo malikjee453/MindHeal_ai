@@ -246,23 +246,42 @@ st.markdown(
         color: white !important;
     }
 
-    [data-testid="stSidebarNav"] [data-testid="stSidebarNavLink"] {
+    /* Keep the sidebar itself compact and make every navigation button
+       occupy only the width its label needs. */
+    [data-testid="stSidebar"] {
+        min-width: 0 !important;
+    }
+
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] {
+        width: fit-content !important;
+        max-width: 100% !important;
+    }
+
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] ul {
+        align-items: flex-start !important;
+        gap: 0.12rem !important;
+        width: 100% !important;
+    }
+
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] li {
+        width: fit-content !important;
+        max-width: 100% !important;
+    }
+
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] a {
         display: inline-flex !important;
         width: fit-content !important;
         max-width: 100% !important;
-        padding: 0.35rem 0.55rem !important;
-        margin: 0.08rem 0 !important;
+        box-sizing: border-box !important;
+        padding: 0.32rem 0.5rem !important;
+        margin: 0.06rem 0 !important;
         border-radius: 7px !important;
     }
 
-    [data-testid="stSidebarNav"] [data-testid="stSidebarNavLink"] p {
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] a p {
         white-space: nowrap !important;
         font-size: 0.86rem !important;
         margin: 0 !important;
-    }
-
-    [data-testid="stSidebarNav"] ul {
-        gap: 0.1rem !important;
     }
 
 
