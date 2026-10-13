@@ -49,63 +49,76 @@ def validate_public_url(raw_url):
     return parsed
 
 def search_playable_audio(search_query, limit=8):
-    """Search Internet Archive's catalog for audio items with playable MP3 files."""
-    response = requests.get(
-        "https://archive.org/advancedsearch.php",
-        params={
-            "q": f'({search_query}) AND mediatype:audio',
-            "fl[]": ["identifier", "title", "creator", "description"],
-            "rows": limit,
-            "page": 1,
-            "output": "json",
-        },
-        timeout=TIMEOUT,
-        headers={"User-Agent": "MindHealAI-MusicSearch/1.0"},
-    )
-    response.raise_for_status()
-    docs = response.json().get("response", {}).get("docs", [])
+    """Search several metadata query forms and return public MP3s from Internet Archive."""
+    terms = [part.strip() for part in search_query.replace('"', " ").split() if part.strip()]
+    safe_phrase = " ".join(terms)
+    query_forms = [
+        f'mediatype:audio AND title:"{safe_phrase}"',
+        f'mediatype:audio AND "{safe_phrase}"',
+        f'mediatype:audio AND ({" OR ".join(terms)})' if terms else "mediatype:audio",
+    ]
+    seen = set()
     playable = []
-    for item in docs:
-        identifier = item.get("identifier")
-        if not identifier:
-            continue
+    for catalog_query in query_forms:
         try:
-            metadata_response = requests.get(
-                f"https://archive.org/metadata/{quote(identifier, safe='')}",
+            response = requests.get(
+                "https://archive.org/advancedsearch.php",
+                params=[
+                    ("q", catalog_query), ("fl[]", "identifier"),
+                    ("fl[]", "title"), ("fl[]", "creator"),
+                    ("fl[]", "description"), ("rows", str(limit * 3)),
+                    ("page", "1"), ("output", "json"),
+                    ("sort[]", "downloads desc"),
+                ],
                 timeout=TIMEOUT,
                 headers={"User-Agent": "MindHealAI-MusicSearch/1.0"},
             )
-            metadata_response.raise_for_status()
-            files = metadata_response.json().get("files", [])
+            response.raise_for_status()
+            docs = response.json().get("response", {}).get("docs", [])
         except (requests.RequestException, ValueError):
             continue
-        mp3_files = [
-            f for f in files
-            if str(f.get("name", "")).lower().endswith(".mp3")
-            and not f.get("private")
-            and not f.get("source") == "original"
-            and f.get("size") is not None
-        ]
-        if not mp3_files:
-            continue
-        mp3_files.sort(key=lambda f: (int(f.get("size", 0) or 0), f.get("name", "")))
-        file_info = mp3_files[0]
-        playable.append({
-            "title": item.get("title") or identifier,
-            "creator": item.get("creator") or "Creator not listed",
-            "identifier": identifier,
-            "url": f"https://archive.org/download/{quote(identifier, safe='')}/{quote(file_info['name'], safe='/')}",
-            "filename": file_info["name"],
-        })
-    return playable
-
+        for item in docs:
+            identifier = item.get("identifier")
+            if not identifier or identifier in seen:
+                continue
+            seen.add(identifier)
+            try:
+                meta_response = requests.get(
+                    f"https://archive.org/metadata/{quote(identifier, safe='')}",
+                    timeout=TIMEOUT,
+                    headers={"User-Agent": "MindHealAI-MusicSearch/1.0"},
+                )
+                meta_response.raise_for_status()
+                files = meta_response.json().get("files", [])
+            except (requests.RequestException, ValueError):
+                continue
+            mp3_files = [
+                f for f in files
+                if str(f.get("name", "")).lower().endswith(".mp3")
+                and not f.get("private") and f.get("size") is not None
+            ]
+            if not mp3_files:
+                continue
+            mp3_files.sort(key=lambda f: (int(f.get("size", 0) or 0), f.get("name", "")))
+            file_info = mp3_files[0]
+            playable.append({
+                "title": item.get("title") or identifier,
+                "creator": item.get("creator") or "Creator not listed",
+                "identifier": identifier,
+                "url": f"https://archive.org/download/{quote(identifier, safe='')}/{quote(file_info['name'], safe='/')}",
+                "filename": file_info["name"],
+                "source_url": f"https://archive.org/details/{quote(identifier, safe='')}",
+            })
+            if len(playable) >= limit:
+                return playable
+    return playable[:limit]
 
 with tab_search:
     st.subheader("Search and play MP3s here")
-    st.caption("Searches Internet Archive's catalog and shows playable MP3 files in this page. Availability and rights vary by upload; use content you are allowed to access.")
+    st.caption("Searches multiple catalog query styles and plays available MP3 files right here. Commercial tracks may not be available as free MP3s; use audio you are authorized to access.")
     with st.form("mindheal_music_search"):
         query = st.text_input("Song, artist, or music style", placeholder="e.g. relaxing piano, jazz, rain sounds")
-        submitted = st.form_submit_button("Search MP3s", type="primary")
+        submitted = st.form_submit_button("Search online MP3s", type="primary")
     if submitted:
         if not query.strip():
             st.warning("Enter a song, artist, or style to search.")
@@ -126,8 +139,9 @@ with tab_search:
                 st.caption(item["creator"])
                 st.audio(item["url"], format="audio/mpeg")
                 st.caption("Source: Internet Archive")
+                st.link_button("View source and rights information", item["source_url"])
     elif st.session_state.get("mindheal_music_query"):
-        st.info("No playable MP3s were found for that search. Try a broader title, artist, or music style.")
+        st.info("No playable MP3 was found in the available catalog for that search. Try the song title alone, search the artist name, or try a different version. Some commercial tracks are not legally available as free MP3s.")
 
 with tab_convert:
     st.subheader("Convert an authorized direct video URL")
