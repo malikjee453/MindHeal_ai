@@ -71,21 +71,34 @@ def render_world_clock():
         drawClock();
         setInterval(drawClock, 1000);
 
-        fetch("https://ipapi.co/json/", {headers: {"Accept":"application/json"}})
-          .then(response => { if (!response.ok) throw new Error("IP lookup unavailable"); return response.json(); })
-          .then(data => {
-            if (data && typeof data.timezone === "string" && data.timezone.includes("/")) {
-              zone = data.timezone;
-              cityEl.textContent = data.city || data.region || data.country_name || "City unavailable";
-            } else {
-              cityEl.textContent = "City unavailable";
+        async function lookupCity() {
+          const providers = [
+            async () => {
+              const response = await fetch("https://ipapi.co/json/");
+              if (!response.ok) throw new Error("ipapi unavailable");
+              const data = await response.json();
+              if (!data || (!data.city && !data.timezone)) throw new Error("No location");
+              return {city: data.city, timezone: data.timezone};
+            },
+            async () => {
+              const response = await fetch("https://ipwho.is/");
+              if (!response.ok) throw new Error("ipwho unavailable");
+              const data = await response.json();
+              if (!data || data.success === false || (!data.city && !data.timezone?.id)) throw new Error("No location");
+              return {city: data.city, timezone: data.timezone?.id};
             }
-            drawClock();
-          })
-          .catch(() => {
-            cityEl.textContent = "City unavailable";
-            drawClock();
-          });
+          ];
+          for (const provider of providers) {
+            try {
+              const data = await provider();
+              if (data.timezone && data.timezone.includes("/")) zone = data.timezone;
+              if (data.city) { cityEl.textContent = data.city; drawClock(); return; }
+            } catch (error) {}
+          }
+          cityEl.textContent = "City unavailable";
+          drawClock();
+        }
+        lookupCity();
       </script>
     </body>
     </html>
