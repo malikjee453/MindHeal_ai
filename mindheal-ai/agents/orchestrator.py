@@ -84,8 +84,8 @@ def respond(user_text, response_style="short", response_language="English", memo
             length_rule = "Use about 120-200 words."
             style_rule = "Be warm, thoughtful, and practical."
         elif response_style == "blunt":
-            length_rule = "Use about 60-120 words."
-            style_rule = "Be candid and reality-based; name the main issue and give a concrete remedy. No sugarcoating, insults, humiliation, or shaming. Distinguish facts from assumptions."
+            length_rule = "Use about 120-200 words by default, and more when necessary to cover important factors."
+            style_rule = "Give a thorough reality check: separate facts from assumptions, identify the core issue, constraints, trade-offs and consequences, compare realistic options including doing nothing where relevant, give prioritized actionable steps, flag pitfalls, and state what missing facts could change the advice. Be direct but never cruel or shaming; do not invent certainty or evidence."
         else:
             length_rule = "Use 2-4 concise sentences, about 35-65 words."
             style_rule = "Be warm, concise, and practical."
@@ -100,7 +100,7 @@ def respond(user_text, response_style="short", response_language="English", memo
                 {"role": "user", "content": "Recent conversation:\\n" + conversation_context + "\\n\\nLatest user message: " + user_text},
             ],
             temperature=0.5,
-            max_tokens=260 if response_style == "detailed" else 120,
+            max_tokens=420 if response_style in ("detailed", "blunt") else 120,
         )
         return answer, [], "FOLLOW_UP"
 
