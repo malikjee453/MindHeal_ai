@@ -18,7 +18,7 @@ def render_world_clock():
           margin: 6px 0 10px; padding: 10px 7px;
           border: 1px solid #d7e5db; border-radius: 12px;
           background: linear-gradient(145deg, #f4f8f5, #e8f2eb);
-          text-align: center; color: #173b2d; width: 100%;
+          text-align: left; color: #173b2d; width: 100%; padding-left: 12px;
         }
         .city {
           font-size: .78rem; font-weight: 700;
