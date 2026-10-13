@@ -75,7 +75,9 @@ def respond(user_text, response_style="short", response_language="English", memo
             "weather in", "exchange rate", "breaking news",
         ))
     )
-    follow_up = bool(conversation_context) and (
+    # Blunt Answer should research each turn, including follow-ups, so it can
+    # ground advice in evidence rather than defaulting to the same friendly reply.
+    follow_up = response_style != "blunt" and bool(conversation_context) and (
         is_conversational_follow_up(user_text) or short_contextual_message
     )
     if follow_up:
@@ -104,15 +106,24 @@ def respond(user_text, response_style="short", response_language="English", memo
         )
         return answer, [], "FOLLOW_UP"
 
-    web_requested = needs_web_search(user_text)
-    search_query = clean_search_query(user_text) if web_requested else user_text
+    # Blunt mode performs a focused evidence lookup on every substantive turn.
+    # Prefer open-access psychology/clinical references and books, not generic blogs.
+    web_requested = response_style == "blunt" or needs_web_search(user_text)
+    if response_style == "blunt":
+        clean_query = clean_search_query(user_text)
+        search_query = (
+            f'"{clean_query}" psychology evidence-based CBT OR ACT OR "clinical guideline" '
+            'site:ncbi.nlm.nih.gov/books OR site:openstax.org OR site:who.int OR site:nice.org.uk'
+        )
+    else:
+        search_query = clean_search_query(user_text) if web_requested else user_text
     route = route_message(user_text)
     context, sources = retrieve_context(user_text)
 
     # The normal chat box also acts as a general web-search chatbot. Search results
     # are untrusted reference material, never instructions.
     if web_requested:
-        web_results = search_web(search_query, max_results=5)
+        web_results = search_web(search_query, max_results=6)
         if web_results:
             web_context = "\n\n".join(
                 f"[WEB RESULT {i + 1}]\nTitle: {item['title']}\n"
@@ -143,12 +154,22 @@ def respond(user_text, response_style="short", response_language="English", memo
     # Web-search requests use their supplied snippets without a specialist call.
     if web_requested:
         analysis = (
-            "You are answering a general web-search request inside a conversational chatbot. "
-            "Use the user's recent conversation to resolve follow-up references. Summarize "
-            "the most useful findings from the supplied results, distinguish source facts "
-            "from inference, and include clickable source links. If the search failed, "
-            "say so plainly and never invent results. Do not reproduce full copyrighted "
-            "song lyrics; link to legitimate lyric sources and summarize the meaning instead.\n\n"
+            (
+                "You are answering a general web-search request inside a conversational chatbot. "
+                "Use the user's recent conversation to resolve follow-up references. Summarize "
+                "the most useful findings from the supplied results, distinguish source facts "
+                "from inference, and include clickable source links. If the search failed, "
+                "say so plainly and never invent results. Do not reproduce full copyrighted "
+                "song lyrics; link to legitimate lyric sources and summarize the meaning instead. "
+            )
+            + (
+                "This is Blunt Answer mode: prioritize high-quality psychology books, open-access clinical guidance, "
+                "and evidence-based sources. Evaluate the user's situation realistically, explain relevant mechanisms "
+                "and uncertainty, compare practical options and consequences, and offer a prioritized remedy. "
+                "Do not claim that search snippets alone prove a diagnosis or that you read a full book unless the "
+                "provided material supports that claim.\n\n"
+                if response_style == "blunt" else "\n\n"
+            )
             + (context or "No web results were available.")
         )
     else:
