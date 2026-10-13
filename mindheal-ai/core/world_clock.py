@@ -18,7 +18,7 @@ def render_world_clock():
           margin: 6px 0 10px; padding: 8px 7px;
           border: 1px solid #d7e5db; border-radius: 12px;
           background: linear-gradient(145deg, #f4f8f5, #e8f2eb);
-          text-align: center; color: #173b2d; width: fit-content; min-width: 0; padding-left: 9px; padding-right: 9px; margin-left: auto; margin-right: auto;
+          text-align: left; color: #173b2d; width: fit-content; min-width: 0; padding-left: 9px; padding-right: 9px; margin-left: 0; margin-right: auto;
         }
         .city {
           font-size: .72rem; font-weight: 500;
@@ -32,7 +32,7 @@ def render_world_clock():
         .colon {
           display: inline-block;
           width: 0.42em;
-          text-align: center;
+          text-align: left;
           opacity: 1;
         }
         .colon.off {
