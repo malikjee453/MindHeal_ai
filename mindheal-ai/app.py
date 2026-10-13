@@ -404,7 +404,8 @@ with c3:
 # =========================================================
 # VISITOR COUNTER
 # =========================================================
-render_world_clock()
+with st.sidebar:
+    render_world_clock()
 
 visitor_count = register_visitor()
 
