@@ -14,12 +14,12 @@ def render_disclaimer():
         <style>
         [data-testid="stSidebar"] [data-testid="stExpander"] {
             margin-left: 0 !important;
-            width: 100% !important;
+            width: fit-content !important; min-width: 0 !important;
         }
         [data-testid="stSidebar"] [data-testid="stExpander"] details summary {
             display: flex !important;
-            justify-content: center !important;
-            padding: 0.25rem 0.35rem !important;
+            justify-content: flex-start !important;
+            padding: 0.25rem 0.5rem !important;
             min-height: 1.9rem !important;
         }
         [data-testid="stSidebar"] [data-testid="stExpander"] details summary p {
