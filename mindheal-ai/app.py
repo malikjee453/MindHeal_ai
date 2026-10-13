@@ -272,6 +272,24 @@ st.markdown(
     }
 
 
+    /* Compact sidebar navigation labels with friendly names. */
+    [data-testid="stSidebar"] [data-testid="stPageLink"] p {
+        font-size: 0 !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stPageLink"] p::after {
+        font-size: 0.9rem;
+        color: #173B2D;
+    }
+    [data-testid="stSidebar"] [data-testid="stPageLink"]:has(a[href*="app"]) p::after {
+        content: "Mind Heal";
+    }
+    [data-testid="stSidebar"] [data-testid="stPageLink"]:has(a[href*="1_Chat"]) p::after {
+        content: "Let's Talk";
+    }
+    [data-testid="stSidebar"] [data-testid="stPageLink"]:has(a[href*="5_Music_and_Relaxation"]) p::after {
+        content: "Relax Music";
+    }
+
     /* =====================================================
        DISCLAIMER
        ===================================================== */
