@@ -29,6 +29,14 @@ def render_world_clock():
           letter-spacing: -.5px; font-variant-numeric: tabular-nums;
           white-space: nowrap;
         }
+        .colon {
+          display: inline-block;
+          animation: colonBlink 1s steps(1, end) infinite;
+        }
+        @keyframes colonBlink {
+          0%, 49% { opacity: 1; }
+          50%, 100% { opacity: 0.15; }
+        }
         .ampm { font-size: .56em; font-weight: 500; letter-spacing: 0; }
         .date {
           font-size: .76rem; font-weight: 400;
@@ -57,7 +65,7 @@ def render_world_clock():
             const hour = parts.find(p => p.type === "hour")?.value || "";
             const minute = parts.find(p => p.type === "minute")?.value || "00";
             const period = parts.find(p => p.type === "dayPeriod")?.value || "";
-            timeEl.innerHTML = hour + ":" + minute +
+            timeEl.innerHTML = hour + '<span class="colon">:</span>' + minute +
               ' <span class="ampm">' + period + "</span>";
             dateEl.textContent = new Intl.DateTimeFormat("en-GB", {
               timeZone: zone, day: "2-digit", month: "short", year: "2-digit"
