@@ -80,14 +80,22 @@ def respond(user_text, response_style="short", response_language="English", memo
     )
     if follow_up:
         language_rule = "Answer in natural Pakistani Urdu script." if str(response_language).lower().startswith("urdu") else "Answer in English."
-        length_rule = "Use about 120-200 words." if response_style == "detailed" else "Use 2-4 concise sentences, about 35-65 words."
+        if response_style == "detailed":
+            length_rule = "Use about 120-200 words."
+            style_rule = "Be warm, thoughtful, and practical."
+        elif response_style == "blunt":
+            length_rule = "Use about 60-120 words."
+            style_rule = "Be candid and reality-based; name the main issue and give a concrete remedy. No sugarcoating, insults, humiliation, or shaming. Distinguish facts from assumptions."
+        else:
+            length_rule = "Use 2-4 concise sentences, about 35-65 words."
+            style_rule = "Be warm, concise, and practical."
         answer = llm_chat(
             [
                 {"role": "system", "content": (
                     "You are MindHeal AI, a warm, practical conversational assistant. "
                     "Answer the latest follow-up directly using the recent conversation. "
                     "Add a genuinely new useful point and avoid repeating prior advice. "
-                    "Do not search the web or mention internal tools. " + language_rule + " " + length_rule
+                    "Do not search the web or mention internal tools. " + language_rule + " " + length_rule + " " + style_rule
                 )},
                 {"role": "user", "content": "Recent conversation:\\n" + conversation_context + "\\n\\nLatest user message: " + user_text},
             ],
