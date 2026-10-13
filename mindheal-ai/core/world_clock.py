@@ -15,10 +15,10 @@ def render_world_clock():
           font-family: "Segoe UI", Arial, sans-serif;
         }
         .clock {
-          margin: 6px 0 10px; padding: 10px 7px;
+          margin: 6px 0 10px; padding: 8px 7px;
           border: 1px solid #d7e5db; border-radius: 12px;
           background: linear-gradient(145deg, #f4f8f5, #e8f2eb);
-          text-align: left; color: #173b2d; width: 100%; padding-left: 12px;
+          text-align: left; color: #173b2d; width: fit-content; min-width: 0; padding-left: 9px; padding-right: 9px;
         }
         .city {
           font-size: .78rem; font-weight: 700;
@@ -102,4 +102,4 @@ def render_world_clock():
       </script>
     </body>
     </html>
-    """, height=105, scrolling=False)
+    """, height=100, scrolling=False)
