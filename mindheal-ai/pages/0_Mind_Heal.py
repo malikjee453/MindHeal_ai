@@ -246,6 +246,54 @@ st.markdown(
         color: white !important;
     }
 
+    /* Center every sidebar element consistently: navigation, HEALER,
+       wellbeing control, clock, labels, and buttons. */
+    [data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+    }
+
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"],
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] ul,
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] li,
+    [data-testid="stSidebar"] [data-testid="stElementContainer"],
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"],
+    [data-testid="stSidebar"] [data-testid="stButton"],
+    [data-testid="stSidebar"] .st-key-local_clock,
+    [data-testid="stSidebar"] .st-key-sidebar_clock {
+        margin-left: auto !important;
+        margin-right: auto !important;
+        text-align: center !important;
+    }
+
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] ul {
+        align-items: center !important;
+    }
+
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] a {
+        justify-content: center !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] a p {
+        text-align: center !important;
+    }
+
+    [data-testid="stSidebar"] [data-testid="stButton"] button {
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h1,
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h2,
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3 {
+        text-align: center !important;
+    }
+
     /* Keep the sidebar itself compact and make every navigation button
        occupy only the width its label needs. */
     [data-testid="stSidebar"] {
