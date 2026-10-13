@@ -52,12 +52,15 @@ def _tokens(value):
     import re
     return set(re.findall(r"[a-z0-9]+", str(value or "").lower()))
 
+def _normalize(value):
+    return " ".join(sorted(_tokens(value)))
+
 def search_deezer_previews(search_query, limit=8):
-    """Return official short previews provided by Deezer's public search API."""
+    """Return relevant official short previews from Deezer's public search API."""
     try:
         response = requests.get(
             "https://api.deezer.com/search",
-            params={"q": search_query, "limit": limit},
+            params={"q": search_query, "limit": limit * 3},
             timeout=TIMEOUT,
             headers={"User-Agent": "MindHealAI-MusicSearch/1.0"},
         )
@@ -67,6 +70,7 @@ def search_deezer_previews(search_query, limit=8):
         return []
     if not isinstance(payload, dict) or not isinstance(payload.get("data"), list):
         return []
+
     wanted = _tokens(search_query)
     results = []
     for track in payload["data"]:
@@ -74,15 +78,23 @@ def search_deezer_previews(search_query, limit=8):
         artist = (track.get("artist") or {}).get("name") or "Artist not listed"
         album = (track.get("album") or {}).get("title") or ""
         preview = track.get("preview")
-        if not preview or not title:
+        if not title or not preview:
             continue
-        title_tokens = _tokens(title)
-        artist_tokens = _tokens(artist)
-        # Reject clearly unrelated results: require at least one search token in
-        # the title/artist, and rank title matches above artist-only matches.
-        if wanted and not (wanted & (title_tokens | artist_tokens)):
+        title_tokens, artist_tokens = _tokens(title), _tokens(artist)
+        # Require a strong title match, or a meaningful multiword artist match.
+        # A single shared token like "Billy" must not qualify "Billie Jean".
+        title_coverage = len(wanted & title_tokens) / max(1, len(wanted))
+        exact_title = wanted == title_tokens
+        title_contains_query = " ".join(search_query.lower().split()) in " ".join(title.lower().split())
+        artist_coverage = len(wanted & artist_tokens) / max(1, len(wanted))
+        if len(wanted) >= 2:
+            title_ok = exact_title or title_contains_query or (title_coverage >= 0.75 and len(wanted & title_tokens) >= 2)
+            artist_ok = artist_coverage >= 0.75 and len(wanted & artist_tokens) >= 2
+            if not (title_ok or artist_ok):
+                continue
+        elif not (wanted & title_tokens or wanted & artist_tokens):
             continue
-        score = 3 * len(wanted & title_tokens) + 2 * len(wanted & artist_tokens)
+        score = (100 if exact_title else 0) + (50 if title_contains_query else 0) + 10 * len(wanted & title_tokens) + 5 * len(wanted & artist_tokens)
         results.append({
             "title": title,
             "creator": artist,
@@ -97,16 +109,16 @@ def search_deezer_previews(search_query, limit=8):
     return results[:limit]
 
 def search_playable_audio(search_query, limit=8):
-    """Find relevant playable previews and full MP3s from available public catalogs."""
+    """Find relevant previews and public full MP3s with strict relevance checks."""
     wanted = _tokens(search_query)
     results = search_deezer_previews(search_query, limit=limit)
     seen = {(item["title"].lower(), item["creator"].lower()) for item in results}
+
     terms = [part.strip() for part in search_query.replace('"', " ").split() if part.strip()]
     safe_phrase = " ".join(terms)
     query_forms = [
         f'mediatype:audio AND title:"{safe_phrase}"',
         f'mediatype:audio AND "{safe_phrase}"',
-        f'mediatype:audio AND ({" OR ".join(terms)})' if terms else "mediatype:audio",
     ]
     seen_ids = set()
     archive_results = []
@@ -135,18 +147,21 @@ def search_playable_audio(search_query, limit=8):
             seen_ids.add(identifier)
             title = item.get("title") or identifier
             creator = item.get("creator") or "Creator not listed"
-            title_tokens = _tokens(title)
-            creator_tokens = _tokens(creator)
-            description_tokens = _tokens(item.get("description", ""))
+            title_tokens, creator_tokens = _tokens(title), _tokens(creator)
+
+            # For multiword queries require a title match, not one incidental
+            # word in a creator name or a long description.
             title_hits = len(wanted & title_tokens)
-            artist_hits = len(wanted & creator_tokens)
-            # Do not show popular but unrelated catalog entries just because the
-            # search engine returned them. Require a match in title or creator.
-            if wanted and title_hits == 0 and artist_hits == 0:
+            creator_hits = len(wanted & creator_tokens)
+            title_coverage = title_hits / max(1, len(wanted))
+            exact_title = wanted == title_tokens
+            phrase_match = " ".join(search_query.lower().split()) in " ".join(title.lower().split())
+            if len(wanted) >= 2:
+                if not (exact_title or phrase_match or (title_coverage >= 0.75 and title_hits >= 2)):
+                    continue
+            elif title_hits == 0:
                 continue
-            score = title_hits * 4 + artist_hits * 3
-            if wanted and not (wanted & (title_tokens | creator_tokens | description_tokens)):
-                continue
+
             try:
                 meta_response = requests.get(
                     f"https://archive.org/metadata/{quote(identifier, safe='')}",
@@ -178,11 +193,12 @@ def search_playable_audio(search_query, limit=8):
                 "source_url": f"https://archive.org/details/{quote(identifier, safe='')}",
                 "source": "Internet Archive",
                 "kind": "full_mp3",
-                "score": score,
+                "score": (100 if exact_title else 0) + (50 if phrase_match else 0) + title_hits * 10 + creator_hits * 2,
             })
     archive_results.sort(key=lambda item: item["score"], reverse=True)
     results.extend(archive_results[:max(0, limit - len(results))])
     return results[:limit]
+
 with tab_search:
     st.subheader("Search and play MP3s here")
     st.caption("Searches Deezer for official 30-second previews and Internet Archive for full MP3s. Full commercial tracks may not be freely available.")
@@ -211,7 +227,7 @@ with tab_search:
                 st.caption("Source: Internet Archive")
                 st.link_button("View source and rights information", item["source_url"])
     elif st.session_state.get("mindheal_music_query"):
-        st.info("No relevant playable result was found. Try the exact song title, add the artist name, or search a different spelling. Commercial tracks may only offer short previews, not full free MP3s.")
+        st.info("No closely matching playable result was found. Try the exact song title and artist separately. Commercial songs may offer only short previews, and unrelated results are intentionally filtered out.")
 
 with tab_convert:
     st.subheader("Convert an authorized direct video URL")
