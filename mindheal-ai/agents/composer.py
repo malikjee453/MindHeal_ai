@@ -31,6 +31,21 @@ Avoid motivational fluff and generic advice. End with a concrete remedy, decisio
         length_guidance = "Aim for 50–90 words. Keep it concise, warm, and useful. Do not exceed 110 words unless the user explicitly asks for more."
         style_guidance = "Be warm, concise, and practical."
 
+    if response_style == "blunt":
+        final_format_guidance = """
+Completeness matters more than brevity. Address every major part of the user's actual question.
+Use clear headings or numbered steps when useful. Explain the reasoning, cover meaningful alternatives and risks, and give a concrete remedy.
+Do not stop after stating the problem or giving only the first step. Finish the explanation and include a practical conclusion.
+If the request has several parts, answer each part. If essential facts are missing, state assumptions and what information would change the advice.
+"""
+        max_output_tokens = 900
+    elif response_style == "detailed":
+        final_format_guidance = "Answer all parts clearly, with useful explanation and practical next steps."
+        max_output_tokens = 700
+    else:
+        final_format_guidance = "Answer the main question clearly and concisely."
+        max_output_tokens = 350
+
     prompt = f"""
 Selected response language: {response_language}
 
@@ -58,7 +73,7 @@ Safety note:
 FINAL RESPONSE STYLE
 ==================================================
 
-Write a short, natural conversation.
+Write a natural, useful conversation.
 
 {length_guidance}
 
@@ -208,5 +223,5 @@ Write ONLY the final response.
                 "content": prompt,
             },
         ],
-        temperature=0.75,
+        temperature=0.55 if response_style == "blunt" else 0.75,\n        max_tokens=max_output_tokens,
     )
