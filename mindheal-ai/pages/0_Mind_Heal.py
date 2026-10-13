@@ -268,6 +268,39 @@ st.markdown(
         padding-right: 0 !important;
     }
 
+    /* Align navigation, HEALER label, wellbeing control and local clock
+       to one consistent left edge. */
+    [data-testid="stSidebar"] [data-testid="stSidebarContent"] > div {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"],
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] ul,
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] li {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+    }
+
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] a {
+        margin-left: 0 !important;
+    }
+
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"],
+    [data-testid="stSidebar"] [data-testid="stElementContainer"] {
+        margin-left: 0 !important;
+    }
+
+    [data-testid="stSidebar"] [data-testid="stButton"] {
+        margin-left: 0 !important;
+    }
+
+    [data-testid="stSidebar"] .st-key-local_clock,
+    [data-testid="stSidebar"] .st-key-sidebar_clock,
+    [data-testid="stSidebar"] [data-testid="stAlert"] {
+        margin-left: 0 !important;
+    }
+
     [data-testid="stSidebar"] [data-testid="stSidebarNav"] {
         width: fit-content !important;
         max-width: 100% !important;
