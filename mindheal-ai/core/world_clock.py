@@ -18,20 +18,20 @@ def render_world_clock():
           margin: 6px 0 10px; padding: 8px 7px;
           border: 1px solid #d7e5db; border-radius: 12px;
           background: linear-gradient(145deg, #f4f8f5, #e8f2eb);
-          text-align: left; color: #173b2d; width: fit-content; min-width: 0; padding-left: 9px; padding-right: 9px;
+          text-align: center; color: #173b2d; width: fit-content; min-width: 0; padding-left: 9px; padding-right: 9px; margin-left: auto; margin-right: auto;
         }
         .city {
-          font-size: .78rem; font-weight: 700;
+          font-size: .72rem; font-weight: 500;
           letter-spacing: .02em; color: #527160; margin-bottom: 3px;
         }
         .time {
-          font-size: 1.55rem; font-weight: 800; line-height: 1.3;
+          font-size: 1.35rem; font-weight: 500; line-height: 1.3;
           letter-spacing: -.5px; font-variant-numeric: tabular-nums;
           white-space: nowrap;
         }
-        .ampm { font-size: .58em; font-weight: 700; letter-spacing: 0; }
+        .ampm { font-size: .56em; font-weight: 500; letter-spacing: 0; }
         .date {
-          font-size: .82rem; font-weight: 600;
+          font-size: .76rem; font-weight: 400;
           color: #42614f; margin-top: 2px;
         }
       </style>
