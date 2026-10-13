@@ -1,5 +1,7 @@
 import streamlit as st
 
+from core.world_clock import render_world_clock
+
 # Friendly page names, with discussion and specialist tools grouped under HEALER.
 st.set_page_config(page_title="MindHeal AI", page_icon=None, layout="wide")
 
@@ -19,4 +21,9 @@ pages = {
 }
 
 selected_page = st.navigation(pages, position="sidebar")
+
+# Render the local IP-based clock globally so it appears on every page.
+with st.sidebar:
+    render_world_clock()
+
 selected_page.run()
