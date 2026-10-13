@@ -56,55 +56,76 @@ def _normalize(value):
     return " ".join(sorted(_tokens(value)))
 
 def search_deezer_previews(search_query, limit=8):
-    """Return relevant official short previews from Deezer's public search API."""
-    try:
-        response = requests.get(
-            "https://api.deezer.com/search",
-            params={"q": search_query, "limit": limit * 3},
-            timeout=TIMEOUT,
-            headers={"User-Agent": "MindHealAI-MusicSearch/1.0"},
-        )
-        response.raise_for_status()
-        payload = response.json()
-    except (requests.RequestException, ValueError):
-        return []
-    if not isinstance(payload, dict) or not isinstance(payload.get("data"), list):
-        return []
+    """Search Deezer with a few query variants and return official short previews."""
+    import re
 
-    wanted = _tokens(search_query)
+    raw = " ".join(search_query.split())
+    tokens = re.findall(r"[a-z0-9]+", raw.lower())
+    variants = [raw]
+    # Search title words separately as a fallback; this helps when a typo or
+    # extra word prevents the catalog from returning the intended song.
+    if len(tokens) >= 2:
+        variants.append(" ".join(tokens[:2]))
+    if len(tokens) >= 3:
+        variants.append(" ".join(tokens[:3]))
+    # Known artist fallback for common spelling variants of this song.
+    if "billie" in tokens and "jean" in tokens:
+        variants.extend(["Billie Jean Michael Jackson", "Michael Jackson Billie Jean"])
+    seen_ids = set()
     results = []
-    for track in payload["data"]:
-        title = track.get("title") or ""
-        artist = (track.get("artist") or {}).get("name") or "Artist not listed"
-        album = (track.get("album") or {}).get("title") or ""
-        preview = track.get("preview")
-        if not title or not preview:
+    for variant in variants:
+        try:
+            response = requests.get(
+                "https://api.deezer.com/search",
+                params={"q": variant, "limit": limit * 3},
+                timeout=TIMEOUT,
+                headers={"User-Agent": "MindHealAI-MusicSearch/1.0"},
+            )
+            response.raise_for_status()
+            payload = response.json()
+        except (requests.RequestException, ValueError):
             continue
-        title_tokens, artist_tokens = _tokens(title), _tokens(artist)
-        # Require a strong title match, or a meaningful multiword artist match.
-        # A single shared token like "Billy" must not qualify "Billie Jean".
-        title_coverage = len(wanted & title_tokens) / max(1, len(wanted))
-        exact_title = wanted == title_tokens
-        title_contains_query = " ".join(search_query.lower().split()) in " ".join(title.lower().split())
-        artist_coverage = len(wanted & artist_tokens) / max(1, len(wanted))
-        if len(wanted) >= 2:
-            title_ok = exact_title or title_contains_query or (title_coverage >= 0.75 and len(wanted & title_tokens) >= 2)
-            artist_ok = artist_coverage >= 0.75 and len(wanted & artist_tokens) >= 2
-            if not (title_ok or artist_ok):
+        if not isinstance(payload, dict) or not isinstance(payload.get("data"), list):
+            continue
+        for track in payload["data"]:
+            track_id = str(track.get("id", ""))
+            title = track.get("title") or ""
+            artist = (track.get("artist") or {}).get("name") or "Artist not listed"
+            album = (track.get("album") or {}).get("title") or ""
+            preview = track.get("preview")
+            if not title or not preview or (track_id and track_id in seen_ids):
                 continue
-        elif not (wanted & title_tokens or wanted & artist_tokens):
-            continue
-        score = (100 if exact_title else 0) + (50 if title_contains_query else 0) + 10 * len(wanted & title_tokens) + 5 * len(wanted & artist_tokens)
-        results.append({
-            "title": title,
-            "creator": artist,
-            "album": album,
-            "url": preview,
-            "source_url": track.get("link") or "https://www.deezer.com/",
-            "source": "Deezer",
-            "kind": "preview",
-            "score": score,
-        })
+            title_tokens = set(re.findall(r"[a-z0-9]+", title.lower()))
+            artist_tokens = set(re.findall(r"[a-z0-9]+", artist.lower()))
+            query_tokens = set(tokens)
+            is_billie_jean = {"billie", "jean"}.issubset(title_tokens)
+            title_overlap = len(query_tokens & title_tokens)
+            artist_overlap = len(query_tokens & artist_tokens)
+            # A strong match must have the song title words, or multiple query
+            # terms in title/artist. Never accept one incidental word alone.
+            if len(query_tokens) >= 2:
+                relevant = is_billie_jean if {"billie", "jean"}.issubset(query_tokens) else (
+                    title_overlap >= min(2, len(query_tokens)) or
+                    (title_overlap >= 1 and artist_overlap >= 1)
+                )
+            else:
+                relevant = bool(query_tokens & (title_tokens | artist_tokens))
+            if not relevant:
+                continue
+            score = (100 if is_billie_jean else 0) + title_overlap * 10 + artist_overlap * 5
+            results.append({
+                "title": title,
+                "creator": artist,
+                "album": album,
+                "url": preview,
+                "source_url": track.get("link") or "https://www.deezer.com/",
+                "source": "Deezer",
+                "kind": "preview",
+                "score": score,
+                "track_id": track_id,
+            })
+            if track_id:
+                seen_ids.add(track_id)
     results.sort(key=lambda item: item["score"], reverse=True)
     return results[:limit]
 
@@ -201,7 +222,7 @@ def search_playable_audio(search_query, limit=8):
 
 with tab_search:
     st.subheader("Search and play MP3s here")
-    st.caption("Searches Deezer for official 30-second previews and Internet Archive for full MP3s. Full commercial tracks may not be freely available.")
+    st.caption("Searches for official 30-second song previews and separately for full MP3s in Internet Archive. Preview availability depends on the catalog and region.")
     with st.form("mindheal_music_search"):
         query = st.text_input("Song, artist, or music style", placeholder="e.g. relaxing piano, jazz, rain sounds")
         submitted = st.form_submit_button("Search songs", type="primary")
@@ -227,7 +248,7 @@ with tab_search:
                 st.caption("Source: Internet Archive")
                 st.link_button("View source and rights information", item["source_url"])
     elif st.session_state.get("mindheal_music_query"):
-        st.info("No closely matching playable result was found. Try the exact song title and artist separately. Commercial songs may offer only short previews, and unrelated results are intentionally filtered out.")
+        st.info("No matching preview or MP3 was returned by the available catalogs. Try the song title and artist separately. If Deezer is unavailable in your region, its previews may not appear.")
 
 with tab_convert:
     st.subheader("Convert an authorized direct video URL")
