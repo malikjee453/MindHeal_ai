@@ -5,10 +5,10 @@ def render_world_clock():
     components.html("""
     <!doctype html><html><head><meta charset="utf-8"><style>
     *{box-sizing:border-box}html,body{margin:0;padding:0;background:transparent;font-family:"Segoe UI",Arial,sans-serif}
-    .clock{margin:8px 0 14px;padding:16px 8px 14px;border:1px solid #d7e5db;border-radius:14px;background:linear-gradient(145deg,#f4f8f5,#e8f2eb);text-align:center;color:#173b2d;width:100%}
+    .clock{margin:6px 0 10px;padding:11px 7px 10px;border:1px solid #d7e5db;border-radius:14px;background:linear-gradient(145deg,#f4f8f5,#e8f2eb);text-align:center;color:#173b2d;width:100%}
     .label{font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#527160}
-    .time{font-size:2rem;font-weight:850;line-height:1.3;letter-spacing:-.6px;margin:5px 0;font-variant-numeric:tabular-nums}
-    .date{font-size:.85rem;font-weight:600;color:#42614f}.place{font-size:.72rem;margin-top:7px;color:#718378;overflow-wrap:anywhere}
+    .time{font-size:1.65rem;font-weight:850;line-height:1.3;letter-spacing:-.6px;margin:3px 0;font-variant-numeric:tabular-nums}
+    .date{font-size:.78rem;font-weight:600;color:#42614f}.place{font-size:.66rem;margin-top:7px;color:#718378;overflow-wrap:anywhere}
     </style></head><body><section class="clock">
     <div class="label">🕒 Your Local Time</div><div class="time" id="t">--:--:--</div>
     <div class="date" id="d">Loading date…</div><div class="place" id="p">Detecting timezone…</div></section>
@@ -24,4 +24,4 @@ def render_world_clock():
       if(x&&x.timezone&&x.timezone.indexOf("/")>0){zone=x.timezone;place=[x.city,x.country_name].filter(Boolean).join(", ")||"Approximate IP location";}else{place="Device timezone";}
       draw();
     }).catch(()=>{place="Device timezone";draw();});
-    </script></body></html>""", height=155, scrolling=False)
+    </script></body></html>""", height=132, scrolling=False)
