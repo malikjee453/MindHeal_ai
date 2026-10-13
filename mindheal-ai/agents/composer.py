@@ -9,8 +9,20 @@ def compose_response(
 
     if response_style == "detailed":
         length_guidance = "Aim for 180–280 words. Give a fuller explanation with clear, useful detail, but avoid repetition and unnecessary lists."
+        style_guidance = "Be warm, thoughtful, and practical."
+    elif response_style == "blunt":
+        length_guidance = "Aim for 60–120 words. Be concise, specific, and actionable."
+        style_guidance = """
+Be candid, direct, and grounded in reality. Do not sugarcoat consequences or reinforce wishful thinking.
+Separate known facts from assumptions; do not pretend certainty when details are missing.
+Name the main issue or trade-off plainly, then give a realistic remedy with concrete next steps.
+Be firm without insults, humiliation, contempt, or shaming. Honesty is not cruelty.
+Never recommend dangerous, illegal, self-destructive, or medically unsafe actions. In mental-health crises, prioritize safety.
+Avoid empty reassurance, clichés, and motivational fluff. Focus on what the user can actually do next.
+"""
     else:
         length_guidance = "Aim for 50–90 words. Keep it concise, warm, and useful. Do not exceed 110 words unless the user explicitly asks for more."
+        style_guidance = "Be warm, concise, and practical."
 
     prompt = f"""
 Selected response language: {response_language}
@@ -42,6 +54,8 @@ FINAL RESPONSE STYLE
 Write a short, natural conversation.
 
 {length_guidance}
+
+{style_guidance}
 
 The answer should feel like a thoughtful conversation with a
 knowledgeable, emotionally intelligent friend.
