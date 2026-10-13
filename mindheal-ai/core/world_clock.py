@@ -76,12 +76,14 @@ def render_world_clock():
           .then(data => {
             if (data && typeof data.timezone === "string" && data.timezone.includes("/")) {
               zone = data.timezone;
-              cityEl.textContent = data.city || "Local Time";
+              cityEl.textContent = data.city || data.region || data.country_name || "City unavailable";
+            } else {
+              cityEl.textContent = "City unavailable";
             }
             drawClock();
           })
           .catch(() => {
-            cityEl.textContent = "Local Time";
+            cityEl.textContent = "City unavailable";
             drawClock();
           });
       </script>
