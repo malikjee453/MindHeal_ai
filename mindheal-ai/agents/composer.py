@@ -223,5 +223,6 @@ Write ONLY the final response.
                 "content": prompt,
             },
         ],
-        temperature=0.55 if response_style == "blunt" else 0.75,\n        max_tokens=max_output_tokens,
+        temperature=0.55 if response_style == "blunt" else 0.75,
+        max_tokens=max_output_tokens,
     )
