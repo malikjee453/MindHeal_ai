@@ -31,11 +31,12 @@ def render_world_clock():
         }
         .colon {
           display: inline-block;
-          animation: colonBlink 1s steps(1, end) infinite;
+          width: 0.42em;
+          text-align: center;
+          opacity: 1;
         }
-        @keyframes colonBlink {
-          0%, 49% { opacity: 1; }
-          50%, 100% { opacity: 0.15; }
+        .colon.off {
+          opacity: 0.12;
         }
         .ampm { font-size: .56em; font-weight: 500; letter-spacing: 0; }
         .date {
@@ -65,7 +66,7 @@ def render_world_clock():
             const hour = parts.find(p => p.type === "hour")?.value || "";
             const minute = parts.find(p => p.type === "minute")?.value || "00";
             const period = parts.find(p => p.type === "dayPeriod")?.value || "";
-            timeEl.innerHTML = hour + '<span class="colon">:</span>' + minute +
+            timeEl.innerHTML = hour + '<span class="colon" id="clockColon">:</span>' + minute +
               ' <span class="ampm">' + period + "</span>";
             dateEl.textContent = new Intl.DateTimeFormat("en-GB", {
               timeZone: zone, day: "2-digit", month: "short", year: "2-digit"
@@ -78,6 +79,12 @@ def render_world_clock():
 
         drawClock();
         setInterval(drawClock, 1000);
+        // Toggle the colon directly in JavaScript for reliable blinking inside
+        // Streamlit's embedded iframe, independent of CSS animation handling.
+        setInterval(() => {
+          const colon = document.getElementById("clockColon");
+          if (colon) colon.classList.toggle("off");
+        }, 500);
 
         async function lookupCity() {
           const providers = [
