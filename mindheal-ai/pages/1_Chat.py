@@ -304,11 +304,11 @@ st.markdown(
 # Keep answer controls left-aligned with the main page title.
 answer_length = st.segmented_control(
     "Answer length",
-    options=["Short Answer", "Detailed Answer"],
+    options=["Short Answer", "Detailed Answer", "Blunt Answer"],
     default="Short Answer",
     label_visibility="collapsed",
     key="answer_length",
-    help="Choose how much detail MindHeal should include in new replies.",
+    help="Choose concise, detailed, or direct reality-based answers with practical remedies.",
 )
 
 if answer_length is None:
@@ -463,6 +463,8 @@ if prompt:
                     response_style=(
                         "detailed"
                         if answer_length == "Detailed Answer"
+                        else "blunt"
+                        if answer_length == "Blunt Answer"
                         else "short"
                     ),
                     response_language=st.session_state.language,
