@@ -48,8 +48,59 @@ def validate_public_url(raw_url):
             raise ValueError("Only publicly reachable video hosts are allowed.")
     return parsed
 
+def _tokens(value):
+    import re
+    return set(re.findall(r"[a-z0-9]+", str(value or "").lower()))
+
+def search_deezer_previews(search_query, limit=8):
+    """Return official short previews provided by Deezer's public search API."""
+    try:
+        response = requests.get(
+            "https://api.deezer.com/search",
+            params={"q": search_query, "limit": limit},
+            timeout=TIMEOUT,
+            headers={"User-Agent": "MindHealAI-MusicSearch/1.0"},
+        )
+        response.raise_for_status()
+        payload = response.json()
+    except (requests.RequestException, ValueError):
+        return []
+    if not isinstance(payload, dict) or not isinstance(payload.get("data"), list):
+        return []
+    wanted = _tokens(search_query)
+    results = []
+    for track in payload["data"]:
+        title = track.get("title") or ""
+        artist = (track.get("artist") or {}).get("name") or "Artist not listed"
+        album = (track.get("album") or {}).get("title") or ""
+        preview = track.get("preview")
+        if not preview or not title:
+            continue
+        title_tokens = _tokens(title)
+        artist_tokens = _tokens(artist)
+        # Reject clearly unrelated results: require at least one search token in
+        # the title/artist, and rank title matches above artist-only matches.
+        if wanted and not (wanted & (title_tokens | artist_tokens)):
+            continue
+        score = 3 * len(wanted & title_tokens) + 2 * len(wanted & artist_tokens)
+        results.append({
+            "title": title,
+            "creator": artist,
+            "album": album,
+            "url": preview,
+            "source_url": track.get("link") or "https://www.deezer.com/",
+            "source": "Deezer",
+            "kind": "preview",
+            "score": score,
+        })
+    results.sort(key=lambda item: item["score"], reverse=True)
+    return results[:limit]
+
 def search_playable_audio(search_query, limit=8):
-    """Search several metadata query forms and return public MP3s from Internet Archive."""
+    """Find relevant playable previews and full MP3s from available public catalogs."""
+    wanted = _tokens(search_query)
+    results = search_deezer_previews(search_query, limit=limit)
+    seen = {(item["title"].lower(), item["creator"].lower()) for item in results}
     terms = [part.strip() for part in search_query.replace('"', " ").split() if part.strip()]
     safe_phrase = " ".join(terms)
     query_forms = [
@@ -57,8 +108,8 @@ def search_playable_audio(search_query, limit=8):
         f'mediatype:audio AND "{safe_phrase}"',
         f'mediatype:audio AND ({" OR ".join(terms)})' if terms else "mediatype:audio",
     ]
-    seen = set()
-    playable = []
+    seen_ids = set()
+    archive_results = []
     for catalog_query in query_forms:
         try:
             response = requests.get(
@@ -66,7 +117,7 @@ def search_playable_audio(search_query, limit=8):
                 params=[
                     ("q", catalog_query), ("fl[]", "identifier"),
                     ("fl[]", "title"), ("fl[]", "creator"),
-                    ("fl[]", "description"), ("rows", str(limit * 3)),
+                    ("fl[]", "description"), ("rows", str(limit * 4)),
                     ("page", "1"), ("output", "json"),
                     ("sort[]", "downloads desc"),
                 ],
@@ -79,9 +130,23 @@ def search_playable_audio(search_query, limit=8):
             continue
         for item in docs:
             identifier = item.get("identifier")
-            if not identifier or identifier in seen:
+            if not identifier or identifier in seen_ids:
                 continue
-            seen.add(identifier)
+            seen_ids.add(identifier)
+            title = item.get("title") or identifier
+            creator = item.get("creator") or "Creator not listed"
+            title_tokens = _tokens(title)
+            creator_tokens = _tokens(creator)
+            description_tokens = _tokens(item.get("description", ""))
+            title_hits = len(wanted & title_tokens)
+            artist_hits = len(wanted & creator_tokens)
+            # Do not show popular but unrelated catalog entries just because the
+            # search engine returned them. Require a match in title or creator.
+            if wanted and title_hits == 0 and artist_hits == 0:
+                continue
+            score = title_hits * 4 + artist_hits * 3
+            if wanted and not (wanted & (title_tokens | creator_tokens | description_tokens)):
+                continue
             try:
                 meta_response = requests.get(
                     f"https://archive.org/metadata/{quote(identifier, safe='')}",
@@ -101,24 +166,29 @@ def search_playable_audio(search_query, limit=8):
                 continue
             mp3_files.sort(key=lambda f: (int(f.get("size", 0) or 0), f.get("name", "")))
             file_info = mp3_files[0]
-            playable.append({
-                "title": item.get("title") or identifier,
-                "creator": item.get("creator") or "Creator not listed",
-                "identifier": identifier,
+            key = (title.lower(), creator.lower())
+            if key in seen:
+                continue
+            archive_results.append({
+                "title": title,
+                "creator": creator,
+                "album": "",
                 "url": f"https://archive.org/download/{quote(identifier, safe='')}/{quote(file_info['name'], safe='/')}",
                 "filename": file_info["name"],
                 "source_url": f"https://archive.org/details/{quote(identifier, safe='')}",
+                "source": "Internet Archive",
+                "kind": "full_mp3",
+                "score": score,
             })
-            if len(playable) >= limit:
-                return playable
-    return playable[:limit]
-
+    archive_results.sort(key=lambda item: item["score"], reverse=True)
+    results.extend(archive_results[:max(0, limit - len(results))])
+    return results[:limit]
 with tab_search:
     st.subheader("Search and play MP3s here")
-    st.caption("Searches multiple catalog query styles and plays available MP3 files right here. Commercial tracks may not be available as free MP3s; use audio you are authorized to access.")
+    st.caption("Searches Deezer for official 30-second previews and Internet Archive for full MP3s. Full commercial tracks may not be freely available.")
     with st.form("mindheal_music_search"):
         query = st.text_input("Song, artist, or music style", placeholder="e.g. relaxing piano, jazz, rain sounds")
-        submitted = st.form_submit_button("Search online MP3s", type="primary")
+        submitted = st.form_submit_button("Search songs", type="primary")
     if submitted:
         if not query.strip():
             st.warning("Enter a song, artist, or style to search.")
@@ -126,13 +196,13 @@ with tab_search:
             st.session_state["mindheal_music_query"] = query.strip()
             st.session_state["mindheal_music_results"] = []
             try:
-                with st.spinner("Searching for playable MP3 files…"):
+                with st.spinner("Searching song previews and playable MP3s…"):
                     st.session_state["mindheal_music_results"] = search_playable_audio(query.strip())
             except (requests.RequestException, ValueError) as exc:
                 st.error("Music search is temporarily unavailable. Please try again shortly.")
     results = st.session_state.get("mindheal_music_results", [])
     if results:
-        st.success(f"Found {len(results)} playable MP3 result(s).")
+        st.success(f"Found {len(results)} relevant playable result(s).")
         for idx, item in enumerate(results):
             with st.container(border=True):
                 st.markdown(f"**{item['title']}**")
@@ -141,7 +211,7 @@ with tab_search:
                 st.caption("Source: Internet Archive")
                 st.link_button("View source and rights information", item["source_url"])
     elif st.session_state.get("mindheal_music_query"):
-        st.info("No playable MP3 was found in the available catalog for that search. Try the song title alone, search the artist name, or try a different version. Some commercial tracks are not legally available as free MP3s.")
+        st.info("No relevant playable result was found. Try the exact song title, add the artist name, or search a different spelling. Commercial tracks may only offer short previews, not full free MP3s.")
 
 with tab_convert:
     st.subheader("Convert an authorized direct video URL")
