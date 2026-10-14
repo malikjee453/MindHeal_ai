@@ -351,33 +351,63 @@ def _requested_quiz(user_text):
     ))
 
 def _parse_mcqs(content):
-    """Parse common numbered questions and A-D options, including HTML-escaped line breaks."""
+    """Parse MCQs whether options are on separate lines or run together."""
     text = html.unescape(str(content or "")).replace("\r", "")
-    text = text.replace("<br>", "\n").replace("<br/>", "\n").replace("<br />", "\n")
-    # Models sometimes return Markdown hard-break backslashes or HTML entities.
+    text = re.sub(r"<br\s*/?>", "\n", text, flags=re.I)
     text = text.replace("\\\n", "\n").replace("&#x20;", " ").replace("&nbsp;", " ")
     questions = []
     current = None
+
+    def add_options(question, fragment):
+        # Split A) / B) / C) / D) markers even when the model puts them on one line.
+        matches = list(re.finditer(r"(?<![A-Za-z])([A-Da-d])[).、:-]\s*", fragment))
+        if len(matches) < 2:
+            return question, fragment
+        question_text = fragment[:matches[0].start()].strip(" :-—")
+        if question_text and not question["question"]:
+            question["question"] = question_text
+        for idx, match in enumerate(matches):
+            label = match.group(1).upper()
+            end = matches[idx + 1].start() if idx + 1 < len(matches) else len(fragment)
+            option_text = fragment[match.end():end].strip().rstrip("\\").strip()
+            if option_text:
+                question["options"].append((label, option_text))
+        return question, ""
+
     for raw_line in text.splitlines():
         line = re.sub(r"<[^>]+>", "", raw_line).strip()
         line = re.sub(r"^\s*(?:[-*]\s*)", "", line)
         qmatch = re.match(r"^(?:#{1,6}\s*)?(?:Q(?:uestion)?\s*)?(\d{1,2})[.)、:-]\s*(.+)$", line, re.I)
-        omatch = re.match(r"^([A-Da-d])[).、:-]\s*(.+)$", line)
         if qmatch:
             if current and len(current["options"]) >= 2:
                 questions.append(current)
-            current = {"question": qmatch.group(2).strip().strip("*"), "options": []}
-        elif omatch and current:
-            current["options"].append((omatch.group(1).upper(), omatch.group(2).strip().rstrip("\\").strip()))
-        elif current and line and len(current["options"]) >= 2:
-            questions.append(current)
-            current = None
+            current = {"question": "", "options": []}
+            fragment = qmatch.group(2).strip().strip("*")
+            current, remainder = add_options(current, fragment)
+            if remainder:
+                current["question"] = remainder
+            continue
+
+        if current:
+            current, remainder = add_options(current, line)
+            if remainder:
+                omatch = re.match(r"^([A-Da-d])[).、:-]\s*(.+)$", remainder)
+                if omatch:
+                    current["options"].append((omatch.group(1).upper(), omatch.group(2).strip().rstrip("\\").strip()))
+                elif len(current["options"]) >= 2:
+                    questions.append(current)
+                    current = None
+                elif not current["question"]:
+                    current["question"] = remainder
+
     if current and len(current["options"]) >= 2:
         questions.append(current)
+
     unique, seen = [], set()
     for question in questions:
+        question["options"] = question["options"][:4]
         key = question["question"].lower()
-        if key not in seen:
+        if len(question["options"]) >= 2 and key not in seen:
             seen.add(key)
             unique.append(question)
     return unique
