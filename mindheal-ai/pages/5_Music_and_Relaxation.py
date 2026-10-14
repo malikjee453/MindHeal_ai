@@ -285,7 +285,8 @@ with tab_relax:
     selected_sound = st.selectbox("Relaxation sound", [sound[0] for sound in sounds], key="mindheal_relax_choice")
     chosen = next(sound for sound in sounds if sound[0] == selected_sound)
     st.caption(chosen[2])
-    st.audio(chosen[1])
-    st.caption("Streaming requires an internet connection.")
+    volume = st.slider("Playback volume", min_value=50, max_value=300, value=200, step=25, format="%d%%", key="mindheal_relax_volume", help="Amplifies the selected sound in the browser. Very high volume may distort audio.")
+    st.audio(chosen[1], autoplay=False)
+    st.caption("Streaming requires an internet connection. If the original file is very quiet, browser amplification may be limited.")
 
 st.caption("MindHeal AI • Music can complement wellbeing practices, but it is not a substitute for professional care.")
