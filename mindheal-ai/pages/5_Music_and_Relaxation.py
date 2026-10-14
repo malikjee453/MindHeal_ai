@@ -1,3 +1,4 @@
+import json
 import ipaddress
 import socket
 import subprocess
@@ -8,6 +9,7 @@ from urllib.parse import quote, urlparse
 import imageio_ffmpeg
 import requests
 import streamlit as st
+import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Music & Relaxation | MindHeal AI", page_icon="🎵", layout="wide")
 
@@ -272,21 +274,39 @@ with tab_convert:
 
 with tab_relax:
     st.subheader("Choose a relaxation sound")
-    st.write("Choose from these built-in soundscapes and use the compact player.")
-    sounds = [
-        ("Rain on a window", "https://actions.google.com/sounds/v1/weather/light_rain.ogg", "Gentle rain for a calm break."),
-        ("Ocean waves", "https://actions.google.com/sounds/v1/water/waves_crashing_on_rock_beach.ogg", "Soft coastal waves."),
-        ("Forest birds", "https://actions.google.com/sounds/v1/ambiences/birds_chirping.ogg", "Birdsong and woodland ambience."),
-        ("Wind in trees", "https://actions.google.com/sounds/v1/weather/wind_whistling.ogg", "A quiet wind ambience."),
-        ("Gentle stream", "https://actions.google.com/sounds/v1/water/stream.ogg", "Flowing water for relaxation."),
-        ("Crackling fireplace", "https://actions.google.com/sounds/v1/ambiences/fireplace.ogg", "Soft fire crackling."),
-        ("Night crickets", "https://actions.google.com/sounds/v1/animals/crickets.ogg", "Calm nighttime insect sounds."),
-    ]
-    selected_sound = st.selectbox("Relaxation sound", [sound[0] for sound in sounds], key="mindheal_relax_choice")
-    chosen = next(sound for sound in sounds if sound[0] == selected_sound)
-    st.caption(chosen[2])
-    volume = st.slider("Playback volume", min_value=50, max_value=300, value=200, step=25, format="%d%%", key="mindheal_relax_volume", help="Amplifies the selected sound in the browser. Very high volume may distort audio.")
-    st.audio(chosen[1], autoplay=False)
-    st.caption("Streaming requires an internet connection. If the original file is very quiet, browser amplification may be limited.")
+    st.write("These soundscapes are generated in your browser, so they don't rely on broken external audio links.")
+    sound_options = ["Rain on a window", "Ocean waves", "Forest birds", "Wind in trees", "Gentle stream", "Crackling fireplace", "Night crickets"]
+    selected_sound = st.selectbox("Relaxation sound", sound_options, key="mindheal_relax_choice")
+    components.html("""
+    <div id="mh-audio" style="font-family:Arial,sans-serif;max-width:340px;color:#173b2d">
+      <button id="mh-toggle" style="border:0;border-radius:8px;padding:9px 15px;background:#2f7655;color:white;font-size:14px;cursor:pointer">▶ Play sound</button>
+      <label for="mh-volume" style="display:block;margin-top:10px;font-size:12px">Volume <span id="mh-volume-value">80%</span></label>
+      <input id="mh-volume" type="range" min="0" max="100" value="80" style="width:100%;accent-color:#2f7655">
+      <div id="mh-status" style="font-size:12px;color:#5c7064;margin-top:5px">Ready to play</div>
+    </div>
+    <script>
+    (() => {
+      const root=document.getElementById('mh-audio'); if(!root||root.dataset.ready)return; root.dataset.ready='1';
+      const toggle=root.querySelector('#mh-toggle'), slider=root.querySelector('#mh-volume'), value=root.querySelector('#mh-volume-value'), status=root.querySelector('#mh-status');
+      const kind=__SOUND_KIND__; let ctx=null, master=null, timer=null, nodes=[], playing=false;
+      function clearNodes(){if(timer){clearInterval(timer);timer=null;}nodes.forEach(n=>{try{if(n.stop)n.stop();}catch(e){}try{n.disconnect();}catch(e){}});nodes=[];}
+      function noise(){const b=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;const s=ctx.createBufferSource();s.buffer=b;s.loop=true;nodes.push(s);return s;}
+      function filtered(type,freq,gain){const s=noise(),f=ctx.createBiquadFilter(),g=ctx.createGain();f.type=type;f.frequency.value=freq;g.gain.value=gain;s.connect(f);f.connect(g);g.connect(master);s.start();nodes.push(f,g);}
+      function tone(freq,dur,wave,gain){const o=ctx.createOscillator(),g=ctx.createGain();o.type=wave;o.frequency.value=freq;g.gain.value=0.0001;o.connect(g);g.connect(master);const t=ctx.currentTime;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(.0002,gain),t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.start(t);o.stop(t+dur+.03);nodes.push(o,g);}
+      function start(){ctx=ctx||new(window.AudioContext||window.webkitAudioContext)();ctx.resume();master=ctx.createGain();master.gain.value=Number(slider.value)/100;master.connect(ctx.destination);
+        if(kind==='Rain on a window'){filtered('lowpass',1700,.5);timer=setInterval(()=>{if(playing&&Math.random()>.25)tone(1800+Math.random()*2400,.035,'triangle',.14)},120);}
+        else if(kind==='Ocean waves'){filtered('lowpass',600,.7);let up=false;timer=setInterval(()=>{if(playing){up=!up;master.gain.setTargetAtTime(Number(slider.value)/100*(up?1:.25),ctx.currentTime,2.5)}},2500);}
+        else if(kind==='Forest birds'){filtered('lowpass',1000,.08);timer=setInterval(()=>{if(playing){const f=1800+Math.random()*1600;tone(f,.12,'sine',.2);setTimeout(()=>{if(playing)tone(f*1.17,.1,'sine',.16)},130)}},950);}
+        else if(kind==='Wind in trees'){filtered('lowpass',400,.6);let up=false;timer=setInterval(()=>{if(playing){up=!up;master.gain.setTargetAtTime(Number(slider.value)/100*(up?.95:.22),ctx.currentTime,3)}},2800);}
+        else if(kind==='Gentle stream'){filtered('bandpass',1000,.35);timer=setInterval(()=>{if(playing&&Math.random()>.3)tone(800+Math.random()*1500,.05,'sine',.05)},100);}
+        else if(kind==='Crackling fireplace'){filtered('lowpass',350,.18);timer=setInterval(()=>{if(playing&&Math.random()>.25)tone(600+Math.random()*2200,.025,'triangle',.22)},130);}
+        else{filtered('lowpass',450,.05);timer=setInterval(()=>{if(playing){const f=2700+Math.random()*1100;tone(f,.09,'sine',.18);setTimeout(()=>{if(playing)tone(f,.08,'sine',.16)},140)}},700);}
+      }
+      toggle.addEventListener('click',()=>{try{if(!playing){playing=true;start();toggle.textContent='■ Stop sound';status.textContent='Playing: '+kind;}else{playing=false;clearNodes();if(master)master.disconnect();toggle.textContent='▶ Play sound';status.textContent='Stopped';}}catch(e){playing=false;status.textContent='Audio could not start. Click Play again.';toggle.textContent='▶ Play sound';}});
+      slider.addEventListener('input',()=>{value.textContent=slider.value+'%';if(master&&ctx)master.gain.setTargetAtTime(Number(slider.value)/100,ctx.currentTime,.04);});
+    })();
+    </script>
+    """.replace("__SOUND_KIND__", json.dumps(selected_sound)), height=115, scrolling=False)
+    st.caption("These are synthesized ambient soundscapes rather than field recordings. Press Play to start audio.")
 
 st.caption("MindHeal AI • Music can complement wellbeing practices, but it is not a substitute for professional care.")
