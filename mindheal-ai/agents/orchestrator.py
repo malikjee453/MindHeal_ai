@@ -56,29 +56,29 @@ def _generate_quiz(user_text, response_language):
         else "Write in the language requested by the user; otherwise use English."
     )
 
-    # Generate small batches so a large quiz doesn't exceed one completion's
-    # token/output limits. Each batch has a fixed numbering range.
+    # Ask each completion for a locally numbered batch (1-5), then renumber
+    # it here. This avoids the model resetting numbers and triggering false
+    # "please continue" messages for every batch after the first.
     batch_size = 5
     all_questions = []
-    answer_keys = []
+    answer_key_items = []
     failures = []
 
     for first in range(1, count + 1, batch_size):
         last = min(first + batch_size - 1, count)
+        batch_count = last - first + 1
         system_prompt = (
-            f"Create exactly {last - first + 1} general-knowledge multiple-choice questions, "
-            f"numbered {first} through {last}. " + language + "\n"
+            f"Create exactly {batch_count} general-knowledge multiple-choice questions. "
+            + language + "\n"
+            "Number these questions locally from 1 to " + str(batch_count) + ".\n"
             "Use this exact format, each item on its own line:\n"
             "1. [question text]\nA) [option]\nB) [option]\nC) [option]\nD) [option]\n"
-            "Use exactly four options labelled A), B), C), D) per question. "
+            "Each question must have exactly four options labelled A), B), C), D). "
             "No introduction, no conclusion, no extra questions. "
-            "At the end include a line: ANSWER_KEY: 1-A, 2-B, ... for only this batch. "
+            "Finish with ANSWER_KEY: 1-A, 2-B, ... for this batch only. "
             "Ensure the answer key is accurate."
         )
-        user_prompt = (
-            str(user_text) + f"\nGenerate only questions {first} through {last}, inclusive. "
-            "Do not restart numbering at 1 unless the range begins at 1."
-        )
+        user_prompt = str(user_text) + f"\nGenerate exactly {batch_count} questions in this batch."
         try:
             batch = llm_chat(
                 [{"role": "system", "content": system_prompt},
@@ -95,34 +95,51 @@ def _generate_quiz(user_text, response_language):
             failures.append(f"{first}-{last}: empty model response")
             continue
 
-        # Keep question body separate from answer key and retain only expected
-        # numbered questions in this batch.
-        key_match = re.search(r"(?im)^\s*(?:ANSWER[_ ]KEY|جواب(?:ات)? کی فہرست)\s*:\s*(.+)$", batch)
+        key_match = re.search(
+            r"(?im)^\s*(?:ANSWER[_ ]KEY|جواب(?:ات)? کی فہرست)\s*:\s*(.+)$",
+            batch,
+        )
         if key_match:
-            answer_keys.append(key_match.group(1).strip())
+            raw_key = key_match.group(1)
+            for number, letter in re.findall(r"(\d{1,2})\s*[-:.)]\s*([A-D])", raw_key, re.I):
+                local_number = int(number)
+                if 1 <= local_number <= batch_count:
+                    answer_key_items.append(f"{first + local_number - 1}-{letter.upper()}")
             batch = batch[:key_match.start()].rstrip()
 
-        found = set()
-        for match in re.finditer(r"(?m)^\s*(\d{1,2})[.)、:-]\s+", batch):
-            number = int(match.group(1))
-            if first <= number <= last:
-                found.add(number)
-        if not found:
+        # Find locally numbered question starts, tolerate markdown and Urdu digits.
+        digit_map = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
+        lines = batch.translate(digit_map).splitlines()
+        starts = []
+        for idx, line in enumerate(lines):
+            match = re.match(r"^\s*(?:\*\*)?(\d{1,2})[.)、:-]\s+(.+?)(?:\*\*)?\s*$", line)
+            if match:
+                local_number = int(match.group(1))
+                if 1 <= local_number <= batch_count:
+                    starts.append((idx, local_number, match.group(2)))
+        if not starts:
             failures.append(f"{first}-{last}: no numbered questions")
-        all_questions.append(batch)
+            continue
+
+        renumbered = []
+        for pos, (line_idx, local_number, question_text) in enumerate(starts):
+            end_idx = starts[pos + 1][0] if pos + 1 < len(starts) else len(lines)
+            global_number = first + local_number - 1
+            renumbered.append(f"{global_number}. {question_text.strip('* ')}")
+            renumbered.extend(lines[line_idx + 1:end_idx])
+        all_questions.append("\n".join(renumbered).strip())
 
     if not all_questions:
         return (
-            "I couldn't generate the quiz because the AI service returned no question text. "
-            "Please try again with 5 questions first, then request the next batch."
+            "I couldn't generate any numbered questions from the AI response. "
+            "Please try a smaller quiz (5 questions) or try again later."
         )
 
     result = "\n\n".join(all_questions)
-    if answer_keys:
-        result += "\n\nANSWER_KEY: " + ", ".join(answer_keys)
+    if answer_key_items:
+        result += "\n\nANSWER_KEY: " + ", ".join(answer_key_items)
     if failures:
-        result += "\n\nSome batches could not be generated (" + "; ".join(failures) + "). "
-        result += "Please ask to continue from the first missing question."
+        result += "\n\nI could not generate questions for these ranges: " + "; ".join(failures) + "."
     return result
 
 
