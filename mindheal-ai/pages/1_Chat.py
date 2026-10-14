@@ -448,9 +448,9 @@ for message in st.session_state.messages:
 # Voice automatically submits after the browser detects the end of speech.
 # ---------------------------------------------------------
 
-# Use Streamlit's native chat input for typed messages on every turn.
+# Keep a real Streamlit chat input as a reliable typed-message fallback.
 # The browser component remains responsible for microphone capture and speech playback.
-prompt = None
+prompt = st.chat_input("Message MindHeal AI…")
 if VOICE_COMPONENT_READY:
     _speak_latest = bool(st.session_state.get("_mindheal_speak_latest", False))
     _latest_answer = ""
@@ -493,7 +493,7 @@ if VOICE_COMPONENT_READY:
             st.rerun()
         if composer_text and composer_text.lower() != "/newchat" and composer_id and composer_id != st.session_state.get("_mindheal_last_composer_id"):
             st.session_state["_mindheal_last_composer_id"] = composer_id
-            # The component is used for voice transcripts; typed text comes from st.chat_input.
+            # Prefer an explicitly typed chat message; otherwise accept the component transcript.
             if not prompt:
                 prompt = composer_text
     elif isinstance(composer_result, str) and composer_result.strip():
