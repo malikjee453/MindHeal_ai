@@ -55,35 +55,75 @@ def _generate_quiz(user_text, response_language):
         if str(response_language).lower().startswith("urdu") or any(ch in str(user_text) for ch in "اردو")
         else "Write in the language requested by the user; otherwise use English."
     )
-    # A larger quiz needs a larger completion budget. Cap at 50 questions to
-    # keep requests within reasonable runtime and provider limits.
-    max_tokens = min(8000, max(1200, count * 155 + 250))
-    messages = [
-        {"role": "system", "content": (
-            f"You generate exactly {count} educational multiple-choice questions. "
-            "Follow the user's requested topic. " + language + "\n"
-            f"Return exactly {count} numbered questions, numbered consecutively from 1 to {count}. "
-            "Each question must use this format, with every option on a separate line:\n"
-            "1. [question text]\nA) [option]\nB) [option]\nC) [option]\nD) [option]\n"
-            "Repeat for every question. Always include exactly four options A), B), C), D). "
-            "Do not put options on the same line as the question or each other. "
-            "Do not omit or merge questions. Do not include explanations between questions. "
-            "Finish with ANSWER_KEY: 1-A, 2-C, ... on one separate final line. "
-            "Ensure facts and answer key are correct."
-        )},
-        {"role": "user", "content": str(user_text) + f"\nPlease generate exactly {count} questions."},
-    ]
-    answer = llm_chat(messages, temperature=0.2, max_tokens=max_tokens)
-    # If provider completion ends early, expose a clear message instead of
-    # silently presenting a truncated quiz as complete.
-    numbered = re.findall(r"(?m)^\s*(\d{1,2})[.)、:-]\s+", str(answer or ""))
-    unique_numbers = {int(n) for n in numbered if 1 <= int(n) <= count}
-    if len(unique_numbers) < count:
-        answer = str(answer or "").rstrip() + (
-            f"\n\nNote: The model returned {len(unique_numbers)} of {count} requested questions. "
-            "Please ask to continue from question " + str(max(unique_numbers, default=0) + 1) + "."
+
+    # Generate small batches so a large quiz doesn't exceed one completion's
+    # token/output limits. Each batch has a fixed numbering range.
+    batch_size = 5
+    all_questions = []
+    answer_keys = []
+    failures = []
+
+    for first in range(1, count + 1, batch_size):
+        last = min(first + batch_size - 1, count)
+        system_prompt = (
+            f"Create exactly {last - first + 1} general-knowledge multiple-choice questions, "
+            f"numbered {first} through {last}. " + language + "\\n"
+            "Use this exact format, each item on its own line:\\n"
+            "1. [question text]\\nA) [option]\\nB) [option]\\nC) [option]\\nD) [option]\\n"
+            "Use exactly four options labelled A), B), C), D) per question. "
+            "No introduction, no conclusion, no extra questions. "
+            "At the end include a line: ANSWER_KEY: 1-A, 2-B, ... for only this batch. "
+            "Ensure the answer key is accurate."
         )
-    return answer
+        user_prompt = (
+            str(user_text) + f"\\nGenerate only questions {first} through {last}, inclusive. "
+            "Do not restart numbering at 1 unless the range begins at 1."
+        )
+        try:
+            batch = llm_chat(
+                [{"role": "system", "content": system_prompt},
+                 {"role": "user", "content": user_prompt}],
+                temperature=0.2,
+                max_tokens=1800,
+            )
+        except Exception as exc:
+            failures.append(f"{first}-{last}: {type(exc).__name__}")
+            continue
+
+        batch = str(batch or "").strip()
+        if not batch:
+            failures.append(f"{first}-{last}: empty model response")
+            continue
+
+        # Keep question body separate from answer key and retain only expected
+        # numbered questions in this batch.
+        key_match = re.search(r"(?im)^\\s*(?:ANSWER[_ ]KEY|جواب(?:ات)? کی فہرست)\\s*:\\s*(.+)$", batch)
+        if key_match:
+            answer_keys.append(key_match.group(1).strip())
+            batch = batch[:key_match.start()].rstrip()
+
+        found = set()
+        for match in re.finditer(r"(?m)^\\s*(\\d{1,2})[.)、:-]\\s+", batch):
+            number = int(match.group(1))
+            if first <= number <= last:
+                found.add(number)
+        if not found:
+            failures.append(f"{first}-{last}: no numbered questions")
+        all_questions.append(batch)
+
+    if not all_questions:
+        return (
+            "I couldn't generate the quiz because the AI service returned no question text. "
+            "Please try again with 5 questions first, then request the next batch."
+        )
+
+    result = "\\n\\n".join(all_questions)
+    if answer_keys:
+        result += "\\n\\nANSWER_KEY: " + ", ".join(answer_keys)
+    if failures:
+        result += "\\n\\nSome batches could not be generated (" + "; ".join(failures) + "). "
+        result += "Please ask to continue from the first missing question."
+    return result
 
 
 def respond(user_text, response_style="short", response_language="English", memory_context="", conversation_context=""):
