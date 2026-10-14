@@ -339,7 +339,6 @@ def render_chat_answer(content, user_text='', key_suffix='answer'):
     editable = any(term in request for term in ('make it editable', 'editable answer', 'editable response', 'let me edit', 'edit this answer'))
     quiz = any(term in request for term in ('mcq', 'multiple choice', 'multiple-choice', 'quiz me', 'make a quiz', 'interactive quiz', 'test me with questions'))
     if editable:
-        st.caption('Edit the response below, preview the formatting, or download your edited version.')
         value = st.text_area('Editable response', value=text, height=280, key='mh_edit_' + key_suffix)
         with st.expander('Preview formatted response'):
             st.markdown(value)
