@@ -334,6 +334,7 @@ with language_col:
 # Flexible answer rendering and interactive quiz/editor controls
 # ---------------------------------------------------------
 import re
+import html
 
 def _requested_editable(user_text):
     request = str(user_text or "").lower()
@@ -345,36 +346,35 @@ def _requested_editable(user_text):
 def _requested_quiz(user_text):
     request = str(user_text or "").lower()
     return any(term in request for term in (
-        "mcq", "multiple choice", "multiple-choice", "quiz me",
-        "make a quiz", "gk questions", "gk mcqs", "interactive quiz",
-        "test me with questions",
+        "mcq", "multiple choice", "multiple-choice", "quiz", "gk questions",
+        "gk mcqs", "test me with questions",
     ))
 
 def _parse_mcqs(content):
-    """Parse common numbered-question and A-D option layouts."""
+    """Parse common numbered questions and A-D options, including HTML-escaped line breaks."""
+    text = html.unescape(str(content or "")).replace("\r", "")
+    text = text.replace("<br>", "\n").replace("<br/>", "\n").replace("<br />", "\n")
+    # Models sometimes return Markdown hard-break backslashes or HTML entities.
+    text = text.replace("\\\n", "\n").replace("&#x20;", " ").replace("&nbsp;", " ")
     questions = []
     current = None
-    for raw_line in str(content or "").replace("\\r", "").splitlines():
-        line = raw_line.strip().replace("\\u00a0", " ")
-        line = re.sub(r"<[^>]+>", "", line)
-        line = re.sub(r"&#x20;|&nbsp;", " ", line, flags=re.I).strip()
-        qmatch = re.match(r"^(?:#{1,6}\\s*)?(?:Q(?:uestion)?\\s*)?(\\d{1,2})[.)、:-]\\s*(.+)$", line, re.I)
-        omatch = re.match(r"^\\s*([a-d])[).、:-]\\s*(.+)$", line, re.I)
+    for raw_line in text.splitlines():
+        line = re.sub(r"<[^>]+>", "", raw_line).strip()
+        line = re.sub(r"^\s*(?:[-*]\s*)", "", line)
+        qmatch = re.match(r"^(?:#{1,6}\s*)?(?:Q(?:uestion)?\s*)?(\d{1,2})[.)、:-]\s*(.+)$", line, re.I)
+        omatch = re.match(r"^([A-Da-d])[).、:-]\s*(.+)$", line)
         if qmatch:
             if current and len(current["options"]) >= 2:
                 questions.append(current)
-            current = {"question": qmatch.group(2).strip(), "options": []}
+            current = {"question": qmatch.group(2).strip().strip("*"), "options": []}
         elif omatch and current:
-            current["options"].append((omatch.group(1).upper(), omatch.group(2).strip().rstrip("\\\\ ")))
+            current["options"].append((omatch.group(1).upper(), omatch.group(2).strip().rstrip("\\").strip()))
         elif current and line and len(current["options"]) >= 2:
-            # A paragraph after the options usually marks the end of this question.
             questions.append(current)
             current = None
     if current and len(current["options"]) >= 2:
         questions.append(current)
-    # Avoid duplicate question text if line wrapping triggered a boundary.
-    unique = []
-    seen = set()
+    unique, seen = [], set()
     for question in questions:
         key = question["question"].lower()
         if key not in seen:
@@ -385,51 +385,39 @@ def _parse_mcqs(content):
 def render_chat_answer(content, user_text="", key_suffix="answer"):
     text = str(content or "")
     if _requested_editable(user_text):
-        st.caption("Edit this response directly. The formatted preview updates with your changes.")
-        edited = st.text_area(
-            "Editable response",
-            value=text,
-            height=300,
-            key="mh_edit_" + key_suffix,
-        )
+        st.caption("Edit this response directly. Preview the formatting or download your edited version.")
+        edited = st.text_area("Editable response", value=text, height=300, key="mh_edit_" + key_suffix)
         with st.expander("Preview formatted response", expanded=True):
             st.markdown(edited)
-        st.download_button(
-            "Download edited response",
-            data=edited,
-            file_name="mindheal_response.md",
-            mime="text/markdown",
-            key="mh_download_" + key_suffix,
-        )
+        st.download_button("Download edited response", data=edited, file_name="mindheal_response.md", mime="text/markdown", key="mh_download_" + key_suffix)
         return
 
-    # Streamlit Markdown supports headings, lists, tables, links, and code blocks.
     if contains_urdu(text):
         st.markdown(f'<div class="urdu-response">{text}</div>', unsafe_allow_html=True)
     else:
         st.markdown(text)
 
-    if _requested_quiz(user_text):
-        questions = _parse_mcqs(text)
-        if questions:
-            st.markdown("#### Select your answers")
-            chosen = {}
-            for number, question in enumerate(questions, 1):
-                options = [f"{letter}. {label}" for letter, label in question["options"]]
-                chosen[number] = st.radio(
-                    question["question"],
-                    options,
-                    index=None,
-                    key=f"mh_mcq_{key_suffix}_{number}",
-                )
-            if st.button("Submit answers", key=f"mh_submit_quiz_{key_suffix}"):
-                answers = {str(n): (v.split(".", 1)[0] if v else None) for n, v in chosen.items()}
-                st.session_state[f"mh_quiz_submitted_{key_suffix}"] = answers
-                st.success("Answers recorded. Ask MindHeal to check them and explain the correct answers.")
-        else:
-            st.info("I couldn't detect selectable options in this response. Ask: 'Create 5 MCQs with each option on a separate line labelled A), B), C), D).'")
+    # Render interactive controls whenever this response contains MCQs, not only
+    # when the user's wording matches a trigger. This also handles Urdu requests.
+    questions = _parse_mcqs(text)
+    if questions and (_requested_quiz(user_text) or len(questions) > 0):
+        st.markdown("#### Select your answers")
+        chosen = {}
+        for number, question in enumerate(questions, 1):
+            options = [f"{letter}. {label}" for letter, label in question["options"]]
+            chosen[number] = st.radio(
+                question["question"],
+                options,
+                index=None,
+                key=f"mh_mcq_{key_suffix}_{number}",
+            )
+        if st.button("Submit answers", key=f"mh_submit_quiz_{key_suffix}"):
+            answers = {str(n): (v.split(".", 1)[0] if v else None) for n, v in chosen.items()}
+            st.session_state[f"mh_quiz_submitted_{key_suffix}"] = answers
+            st.success("Your selections are recorded. Ask MindHeal to check your answers and explain them.")
+    elif _requested_quiz(user_text):
+        st.info("I couldn't detect options in this response. Ask for each option on a separate line labelled A), B), C), and D).")
 
-# ---------------------------------------------------------
 # Restore recent saved conversation only when the user opted in.
 # ---------------------------------------------------------
 
