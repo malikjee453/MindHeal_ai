@@ -351,63 +351,70 @@ def _requested_quiz(user_text):
     ))
 
 def _parse_mcqs(content):
-    """Parse MCQs whether options are on separate lines or run together."""
+    """Parse MCQs with options on separate lines or inline (including Urdu text)."""
     text = html.unescape(str(content or "")).replace("\r", "")
     text = re.sub(r"<br\s*/?>", "\n", text, flags=re.I)
     text = text.replace("\\\n", "\n").replace("&#x20;", " ").replace("&nbsp;", " ")
     questions = []
     current = None
 
-    def add_options(question, fragment):
-        # Split A) / B) / C) / D) markers even when the model puts them on one line.
-        matches = list(re.finditer(r"(?<![A-Za-z])([A-Da-d])[).、:-]\s*", fragment))
+    def split_options(fragment):
+        # Option labels may be embedded after the question or on their own lines.
+        pattern = r"(?<![A-Za-z])([A-Da-d])[).、:-]\s*"
+        matches = list(re.finditer(pattern, fragment))
         if len(matches) < 2:
-            return question, fragment
-        question_text = fragment[:matches[0].start()].strip(" :-—")
-        if question_text and not question["question"]:
-            question["question"] = question_text
-        for idx, match in enumerate(matches):
-            label = match.group(1).upper()
-            end = matches[idx + 1].start() if idx + 1 < len(matches) else len(fragment)
-            option_text = fragment[match.end():end].strip().rstrip("\\").strip()
-            if option_text:
-                question["options"].append((label, option_text))
-        return question, ""
+            return None, fragment.strip()
+        opts = []
+        for i, match in enumerate(matches):
+            end_pos = matches[i + 1].start() if i + 1 < len(matches) else len(fragment)
+            value = fragment[match.end():end_pos].strip().strip("\\").strip()
+            if value:
+                opts.append((match.group(1).upper(), value))
+        question_text = fragment[:matches[0].start()].strip(" :-—*")
+        return opts, question_text
 
     for raw_line in text.splitlines():
         line = re.sub(r"<[^>]+>", "", raw_line).strip()
         line = re.sub(r"^\s*(?:[-*]\s*)", "", line)
+        # Strip answer-key line; it is used only as source text, not a question.
+        if re.match(r"^(?:ANSWER[_ ]KEY|جوابات|درست جوابات)\s*:", line, re.I):
+            continue
         qmatch = re.match(r"^(?:#{1,6}\s*)?(?:Q(?:uestion)?\s*)?(\d{1,2})[.)、:-]\s*(.+)$", line, re.I)
         if qmatch:
             if current and len(current["options"]) >= 2:
                 questions.append(current)
-            current = {"question": "", "options": []}
             fragment = qmatch.group(2).strip().strip("*")
-            current, remainder = add_options(current, fragment)
-            if remainder:
-                current["question"] = remainder
+            opts, qtext = split_options(fragment)
+            current = {"question": qtext or fragment, "options": opts or []}
             continue
 
         if current:
-            current, remainder = add_options(current, line)
-            if remainder:
-                omatch = re.match(r"^([A-Da-d])[).、:-]\s*(.+)$", remainder)
-                if omatch:
-                    current["options"].append((omatch.group(1).upper(), omatch.group(2).strip().rstrip("\\").strip()))
+            opts, remainder = split_options(line)
+            if opts:
+                current["options"].extend(opts)
+            else:
+                option = re.match(r"^([A-Da-d])[).、:-]\s*(.+)$", remainder)
+                if option:
+                    current["options"].append((option.group(1).upper(), option.group(2).strip().rstrip("\\").strip()))
                 elif len(current["options"]) >= 2:
                     questions.append(current)
                     current = None
-                elif not current["question"]:
-                    current["question"] = remainder
 
     if current and len(current["options"]) >= 2:
         questions.append(current)
 
     unique, seen = [], set()
     for question in questions:
-        question["options"] = question["options"][:4]
+        # Keep one option per letter and cap to A-D.
+        cleaned = []
+        letters = set()
+        for letter, label in question["options"]:
+            if letter in "ABCD" and letter not in letters and label:
+                cleaned.append((letter, label))
+                letters.add(letter)
+        question["options"] = cleaned
         key = question["question"].lower()
-        if len(question["options"]) >= 2 and key not in seen:
+        if len(cleaned) >= 2 and key not in seen:
             seen.add(key)
             unique.append(question)
     return unique
