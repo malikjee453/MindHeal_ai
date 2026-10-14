@@ -20,39 +20,69 @@ def is_conversational_follow_up(text):
     return any(value == phrase or value.startswith(phrase + " ") for phrase in starters)
 
 
+def _requested_quiz_count(text):
+    """Read an explicit quiz count, including digits written in Urdu/Arabic numerals."""
+    value = str(text or "")
+    digit_map = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
+    normalized = value.translate(digit_map)
+    patterns = (
+        r"\\b(?:give me|create|make|generate|prepare|provide)\\s+(\\d{1,2})\\s+(?:gk\\s+)?(?:mcqs?|questions?|multiple[- ]choice questions?)\\b",
+        r"\\b(\\d{1,2})\\s+(?:gk\\s+)?(?:mcqs?|multiple[- ]choice questions?)\\b",
+        r"(\\d{1,2})\\s*(?:جی کے|عمومی علم کے)?\\s*(?:ایم سی کیوز|سوالات|سوال)",
+    )
+    for pattern in patterns:
+        match = re.search(pattern, normalized, re.I)
+        if match:
+            count = int(match.group(1))
+            if 1 <= count <= 50:
+                return count
+    return 5
+
+
 def _is_quiz_request(text):
     value = str(text or "").lower()
     return any(term in value for term in (
         "mcq", "multiple choice", "multiple-choice", "quiz",
         "gk questions", "gk mcqs", "general knowledge questions",
-    )) or ("سوال" in value and any(term in value for term in ("اختیارات", "کثیر", "کوئز")))
+    )) or (("سوال" in value or "سوالات" in value) and any(term in value for term in ("اختیارات", "کثیر", "کوئز", "عمومی علم")))
 
 
 def _generate_quiz(user_text, response_language):
+    count = _requested_quiz_count(user_text)
     language = (
         "Write entirely in natural Pakistani Urdu script."
         if str(response_language).lower().startswith("urdu") or any(ch in str(user_text) for ch in "اردو")
         else "Write in the language requested by the user; otherwise use English."
     )
-    return llm_chat(
-        [
-            {"role": "system", "content": (
-                "You generate educational multiple-choice quizzes. Follow the user's requested topic and count. "
-                + language + "\n"
-                "IMPORTANT OUTPUT FORMAT: For EVERY question, use this exact structure, with each item on its own line:\n"
-                "1. [question text]\nA) [option]\nB) [option]\nC) [option]\nD) [option]\n"
-                "Repeat for each question. Always include exactly four options labelled A), B), C), D). "
-                "Do not put multiple options on one line. Do not omit any options. "
-                "Do not include the correct answer immediately after each question. "
-                "Finish with a separate answer key, formatted as: ANSWER_KEY: 1-A, 2-C, ... "
-                "Keep the answer key on its own final line. No introduction or conclusion. "
-                "Ensure questions and answers are factually correct."
-            )},
-            {"role": "user", "content": str(user_text)},
-        ],
-        temperature=0.25,
-        max_tokens=1200,
-    )
+    # A larger quiz needs a larger completion budget. Cap at 50 questions to
+    # keep requests within reasonable runtime and provider limits.
+    max_tokens = min(8000, max(1200, count * 155 + 250))
+    messages = [
+        {"role": "system", "content": (
+            f"You generate exactly {count} educational multiple-choice questions. "
+            "Follow the user's requested topic. " + language + "\\n"
+            f"Return exactly {count} numbered questions, numbered consecutively from 1 to {count}. "
+            "Each question must use this format, with every option on a separate line:\\n"
+            "1. [question text]\\nA) [option]\\nB) [option]\\nC) [option]\\nD) [option]\\n"
+            "Repeat for every question. Always include exactly four options A), B), C), D). "
+            "Do not put options on the same line as the question or each other. "
+            "Do not omit or merge questions. Do not include explanations between questions. "
+            "Finish with ANSWER_KEY: 1-A, 2-C, ... on one separate final line. "
+            "Ensure facts and answer key are correct."
+        )},
+        {"role": "user", "content": str(user_text) + f"\\nPlease generate exactly {count} questions."},
+    ]
+    answer = llm_chat(messages, temperature=0.2, max_tokens=max_tokens)
+    # If provider completion ends early, expose a clear message instead of
+    # silently presenting a truncated quiz as complete.
+    numbered = re.findall(r"(?m)^\\s*(\\d{1,2})[.)、:-]\\s+", str(answer or ""))
+    unique_numbers = {int(n) for n in numbered if 1 <= int(n) <= count}
+    if len(unique_numbers) < count:
+        answer = str(answer or "").rstrip() + (
+            f"\\n\\nNote: The model returned {len(unique_numbers)} of {count} requested questions. "
+            "Please ask to continue from question " + str(max(unique_numbers, default=0) + 1) + "."
+        )
+    return answer
 
 
 def respond(user_text, response_style="short", response_language="English", memory_context="", conversation_context=""):
