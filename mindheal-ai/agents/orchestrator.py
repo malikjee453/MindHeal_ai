@@ -20,7 +20,48 @@ def is_conversational_follow_up(text):
     return any(value == phrase or value.startswith(phrase + " ") for phrase in starters)
 
 
+def _is_quiz_request(text):
+    value = str(text or "").lower()
+    return any(term in value for term in (
+        "mcq", "multiple choice", "multiple-choice", "quiz",
+        "gk questions", "gk mcqs", "general knowledge questions",
+    )) or ("سوال" in value and any(term in value for term in ("اختیارات", "کثیر", "کوئز")))
+
+
+def _generate_quiz(user_text, response_language):
+    language = (
+        "Write entirely in natural Pakistani Urdu script."
+        if str(response_language).lower().startswith("urdu") or any(ch in str(user_text) for ch in "اردو")
+        else "Write in the language requested by the user; otherwise use English."
+    )
+    return llm_chat(
+        [
+            {"role": "system", "content": (
+                "You generate educational multiple-choice quizzes. Follow the user's requested topic and count. "
+                + language + "\n"
+                "IMPORTANT OUTPUT FORMAT: For EVERY question, use this exact structure, with each item on its own line:\n"
+                "1. [question text]\nA) [option]\nB) [option]\nC) [option]\nD) [option]\n"
+                "Repeat for each question. Always include exactly four options labelled A), B), C), D). "
+                "Do not put multiple options on one line. Do not omit any options. "
+                "Do not include the correct answer immediately after each question. "
+                "Finish with a separate answer key, formatted as: ANSWER_KEY: 1-A, 2-C, ... "
+                "Keep the answer key on its own final line. No introduction or conclusion. "
+                "Ensure questions and answers are factually correct."
+            )},
+            {"role": "user", "content": str(user_text)},
+        ],
+        temperature=0.25,
+        max_tokens=1200,
+    )
+
+
 def respond(user_text, response_style="short", response_language="English", memory_context="", conversation_context=""):
+    # Quiz requests bypass the emotional-support short-answer composer so every
+    # question and its four options are generated completely for interactive rendering.
+    if _is_quiz_request(user_text):
+        answer = _generate_quiz(user_text, response_language)
+        return answer, [], "QUIZ"
+
     # Resolve explicit current time/date questions deterministically in the requested timezone.
     # This must run before the short-follow-up shortcut, which otherwise skips live lookup.
     normalized = " ".join(str(user_text or "").lower().split()).strip(" .!?")
