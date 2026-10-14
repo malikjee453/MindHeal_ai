@@ -67,16 +67,16 @@ def _generate_quiz(user_text, response_language):
         last = min(first + batch_size - 1, count)
         system_prompt = (
             f"Create exactly {last - first + 1} general-knowledge multiple-choice questions, "
-            f"numbered {first} through {last}. " + language + "\\n"
-            "Use this exact format, each item on its own line:\\n"
-            "1. [question text]\\nA) [option]\\nB) [option]\\nC) [option]\\nD) [option]\\n"
+            f"numbered {first} through {last}. " + language + "\n"
+            "Use this exact format, each item on its own line:\n"
+            "1. [question text]\nA) [option]\nB) [option]\nC) [option]\nD) [option]\n"
             "Use exactly four options labelled A), B), C), D) per question. "
             "No introduction, no conclusion, no extra questions. "
             "At the end include a line: ANSWER_KEY: 1-A, 2-B, ... for only this batch. "
             "Ensure the answer key is accurate."
         )
         user_prompt = (
-            str(user_text) + f"\\nGenerate only questions {first} through {last}, inclusive. "
+            str(user_text) + f"\nGenerate only questions {first} through {last}, inclusive. "
             "Do not restart numbering at 1 unless the range begins at 1."
         )
         try:
@@ -97,13 +97,13 @@ def _generate_quiz(user_text, response_language):
 
         # Keep question body separate from answer key and retain only expected
         # numbered questions in this batch.
-        key_match = re.search(r"(?im)^\\s*(?:ANSWER[_ ]KEY|جواب(?:ات)? کی فہرست)\\s*:\\s*(.+)$", batch)
+        key_match = re.search(r"(?im)^\s*(?:ANSWER[_ ]KEY|جواب(?:ات)? کی فہرست)\s*:\s*(.+)$", batch)
         if key_match:
             answer_keys.append(key_match.group(1).strip())
             batch = batch[:key_match.start()].rstrip()
 
         found = set()
-        for match in re.finditer(r"(?m)^\\s*(\\d{1,2})[.)、:-]\\s+", batch):
+        for match in re.finditer(r"(?m)^\s*(\d{1,2})[.)、:-]\s+", batch):
             number = int(match.group(1))
             if first <= number <= last:
                 found.add(number)
@@ -117,11 +117,11 @@ def _generate_quiz(user_text, response_language):
             "Please try again with 5 questions first, then request the next batch."
         )
 
-    result = "\\n\\n".join(all_questions)
+    result = "\n\n".join(all_questions)
     if answer_keys:
-        result += "\\n\\nANSWER_KEY: " + ", ".join(answer_keys)
+        result += "\n\nANSWER_KEY: " + ", ".join(answer_keys)
     if failures:
-        result += "\\n\\nSome batches could not be generated (" + "; ".join(failures) + "). "
+        result += "\n\nSome batches could not be generated (" + "; ".join(failures) + "). "
         result += "Please ask to continue from the first missing question."
     return result
 
