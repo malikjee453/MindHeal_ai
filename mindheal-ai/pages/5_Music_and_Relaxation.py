@@ -298,8 +298,29 @@ with tab_relax:
         else if(kind==='Ocean waves'){filtered('lowpass',600,.7);let up=false;timer=setInterval(()=>{if(playing){up=!up;master.gain.setTargetAtTime(Number(slider.value)/100*(up?1:.25),ctx.currentTime,2.5)}},2500);}
         else if(kind==='Forest birds'){filtered('lowpass',1000,.08);timer=setInterval(()=>{if(playing){const f=1800+Math.random()*1600;tone(f,.12,'sine',.2);setTimeout(()=>{if(playing)tone(f*1.17,.1,'sine',.16)},130)}},950);}
         else if(kind==='Wind in trees'){filtered('lowpass',400,.6);let up=false;timer=setInterval(()=>{if(playing){up=!up;master.gain.setTargetAtTime(Number(slider.value)/100*(up?.95:.22),ctx.currentTime,3)}},2800);}
-        else if(kind==='Gentle stream'){filtered('bandpass',1000,.35);timer=setInterval(()=>{if(playing&&Math.random()>.3)tone(800+Math.random()*1500,.05,'sine',.05)},100);}
-        else if(kind==='Crackling fireplace'){filtered('lowpass',350,.18);timer=setInterval(()=>{if(playing&&Math.random()>.25)tone(600+Math.random()*2200,.025,'triangle',.22)},130);}
+        else if(kind==='Gentle stream'){
+          // Flowing-water texture: several soft, overlapping ripples with no sharp crackles.
+          filtered('bandpass',900,.16);
+          filtered('lowpass',2200,.10);
+          timer=setInterval(()=>{
+            if(playing && Math.random()>.15){
+              const f=450+Math.random()*950;
+              tone(f,.22,'sine',.025);
+              setTimeout(()=>{if(playing)tone(f*1.35,.16,'sine',.018)},80);
+            }
+          },180);
+        }
+        else if(kind==='Crackling fireplace'){
+          // Distinct, sparse, short pops over a low warm fire-like rumble.
+          filtered('lowpass',180,.22);
+          timer=setInterval(()=>{
+            if(playing && Math.random()>.48){
+              const f=900+Math.random()*2600;
+              tone(f,.012,'triangle',.32);
+              if(Math.random()>.55)setTimeout(()=>{if(playing)tone(f*.72,.018,'triangle',.22)},35);
+            }
+          },240);
+        }
         else{filtered('lowpass',450,.05);timer=setInterval(()=>{if(playing){const f=2700+Math.random()*1100;tone(f,.09,'sine',.18);setTimeout(()=>{if(playing)tone(f,.08,'sine',.16)},140)}},700);}
       }
       toggle.addEventListener('click',()=>{try{if(!playing){playing=true;start();toggle.textContent='■ Stop sound';status.textContent='Playing: '+kind;}else{playing=false;clearNodes();if(master)master.disconnect();toggle.textContent='▶ Play sound';status.textContent='Stopped';}}catch(e){playing=false;status.textContent='Audio could not start. Click Play again.';toggle.textContent='▶ Play sound';}});
