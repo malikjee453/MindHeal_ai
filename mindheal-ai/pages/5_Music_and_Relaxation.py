@@ -276,11 +276,11 @@ with tab_relax:
     sounds = [
         ("Rain on a window", "https://actions.google.com/sounds/v1/weather/light_rain.ogg", "Gentle rain for a calm break."),
         ("Ocean waves", "https://actions.google.com/sounds/v1/water/waves_crashing_on_rock_beach.ogg", "Soft coastal waves."),
-        ("Forest birds", "https://actions.google.com/sounds/v1/ambiences/summer_forest.ogg", "Birdsong and woodland ambience."),
-        ("Wind in trees", "https://actions.google.com/sounds/v1/weather/desert_howling_wind.ogg", "A quiet wind ambience."),
-        ("Gentle stream", "https://actions.google.com/sounds/v1/water/small_stream_flowing.ogg", "Flowing water for relaxation."),
-        ("Crackling fireplace", "https://actions.google.com/sounds/v1/ambiences/warm_evening_outdoors.ogg", "Soft fire crackling."),
-        ("Night crickets", "https://actions.google.com/sounds/v1/animals/afternoon_crickets_long.ogg", "Calm nighttime insect sounds."),
+        ("Forest birds", "https://actions.google.com/sounds/v1/ambiences/birds_chirping.ogg", "Birdsong and woodland ambience."),
+        ("Wind in trees", "https://actions.google.com/sounds/v1/weather/wind_whistling.ogg", "A quiet wind ambience."),
+        ("Gentle stream", "https://actions.google.com/sounds/v1/water/stream.ogg", "Flowing water for relaxation."),
+        ("Crackling fireplace", "https://actions.google.com/sounds/v1/ambiences/fireplace.ogg", "Soft fire crackling."),
+        ("Night crickets", "https://actions.google.com/sounds/v1/animals/crickets.ogg", "Calm nighttime insect sounds."),
     ]
     selected_sound = st.selectbox("Relaxation sound", [sound[0] for sound in sounds], key="mindheal_relax_choice")
     chosen = next(sound for sound in sounds if sound[0] == selected_sound)
