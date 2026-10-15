@@ -273,104 +273,26 @@ with tab_convert:
     st.caption("Safety limits: HTTPS only, public hosts only, no redirects, maximum 40 MB input and 10 minutes of converted audio. Some hosts block server downloads. Convert only media you own or are authorized to use.")
 
 with tab_relax:
-    st.subheader("Choose a relaxation sound")
-    st.write("These soundscapes are generated in your browser, so they don't rely on broken external audio links.")
-    sound_options = ["Rain on a window", "Ocean waves", "Forest birds", "Wind in trees", "Gentle stream", "Crackling fireplace", "Night crickets"]
-    selected_sound = st.selectbox("Relaxation sound", sound_options, key="mindheal_relax_choice")
-    components.html("""
-    <div id="mh-audio" style="font-family:Arial,sans-serif;max-width:340px;color:#173b2d">
-      <button id="mh-toggle" style="border:0;border-radius:8px;padding:9px 15px;background:#2f7655;color:white;font-size:14px;cursor:pointer">▶ Play sound</button>
-      <label for="mh-volume" style="display:block;margin-top:10px;font-size:12px">Volume <span id="mh-volume-value">80%</span></label>
-      <input id="mh-volume" type="range" min="0" max="100" value="80" style="width:100%;accent-color:#2f7655">
-      <div id="mh-status" style="font-size:12px;color:#5c7064;margin-top:5px">Ready to play</div>
-    </div>
-    <script>
-    (() => {
-      const root=document.getElementById('mh-audio'); if(!root||root.dataset.ready)return; root.dataset.ready='1';
-      const toggle=root.querySelector('#mh-toggle'), slider=root.querySelector('#mh-volume'), value=root.querySelector('#mh-volume-value'), status=root.querySelector('#mh-status');
-      const kind=__SOUND_KIND__; let ctx=null, master=null, timer=null, nodes=[], playing=false;
+    st.subheader("Soft instrumental music")
+    st.write("Choose a gentle instrumental soundscape for relaxing, breathing, reading, or winding down.")
 
-      // Use real, licensed field recordings for these two sounds instead of synthesized approximations.
-      const realSources={
-        'Gentle stream':'https://commons.wikimedia.org/wiki/Special:Redirect/file/Sound_Effects_-_The_sound_of_a_small_stream.ogg?download=1',
-        'Crackling fireplace':'https://upload.wikimedia.org/wikipedia/commons/transcoded/b/b1/Campfire_sound_ambience.ogg/Campfire_sound_ambience.ogg.mp3'
-      };
-      if(realSources[kind]){
-        const audio=new Audio(realSources[kind]);
-        audio.loop=true;
-        audio.volume=Number(slider.value)/100;
-        toggle.addEventListener('click',async()=>{
-          try{
-            if(!playing){
-              await audio.play();
-              playing=true;
-              toggle.textContent='■ Stop sound';
-              status.textContent='Playing: '+kind;
-            }else{
-              audio.pause();
-              audio.currentTime=0;
-              playing=false;
-              toggle.textContent='▶ Play sound';
-              status.textContent='Stopped';
-            }
-          }catch(e){
-            playing=false;
-            toggle.textContent='▶ Play sound';
-            status.textContent='Could not load audio. Please try again.';
-          }
-        });
-        slider.addEventListener('input',()=>{
-          value.textContent=slider.value+'%';
-          audio.volume=Number(slider.value)/100;
-        });
-        audio.addEventListener('ended',()=>{playing=false;toggle.textContent='▶ Play sound';status.textContent='Ready to play';});
-        return;
-      }
-
-      function clearNodes(){if(timer){clearInterval(timer);timer=null;}nodes.forEach(n=>{try{if(n.stop)n.stop();}catch(e){}try{n.disconnect();}catch(e){}});nodes=[];}
-      function noise(){const b=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;const s=ctx.createBufferSource();s.buffer=b;s.loop=true;nodes.push(s);return s;}
-      function filtered(type,freq,gain){const s=noise(),f=ctx.createBiquadFilter(),g=ctx.createGain();f.type=type;f.frequency.value=freq;g.gain.value=gain;s.connect(f);f.connect(g);g.connect(master);s.start();nodes.push(f,g);}
-      function tone(freq,dur,wave,gain){const o=ctx.createOscillator(),g=ctx.createGain();o.type=wave;o.frequency.value=freq;g.gain.value=0.0001;o.connect(g);g.connect(master);const t=ctx.currentTime;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(.0002,gain),t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.start(t);o.stop(t+dur+.03);nodes.push(o,g);}
-      function start(){ctx=ctx||new(window.AudioContext||window.webkitAudioContext)();ctx.resume();master=ctx.createGain();master.gain.value=Number(slider.value)/100;master.connect(ctx.destination);
-        if(kind==='Rain on a window'){filtered('lowpass',1700,.5);timer=setInterval(()=>{if(playing&&Math.random()>.25)tone(1800+Math.random()*2400,.035,'triangle',.14)},120);}
-        else if(kind==='Ocean waves'){filtered('lowpass',600,.7);let up=false;timer=setInterval(()=>{if(playing){up=!up;master.gain.setTargetAtTime(Number(slider.value)/100*(up?1:.25),ctx.currentTime,2.5)}},2500);}
-        else if(kind==='Forest birds'){filtered('lowpass',1000,.08);timer=setInterval(()=>{if(playing){const f=1800+Math.random()*1600;tone(f,.12,'sine',.2);setTimeout(()=>{if(playing)tone(f*1.17,.1,'sine',.16)},130)}},950);}
-        else if(kind==='Wind in trees'){filtered('lowpass',400,.6);let up=false;timer=setInterval(()=>{if(playing){up=!up;master.gain.setTargetAtTime(Number(slider.value)/100*(up?.95:.22),ctx.currentTime,3)}},2800);}
-        else if(kind==='Gentle stream'){
-          // Flowing-water texture: several soft, overlapping ripples with no sharp crackles.
-          filtered('bandpass',900,.16);
-          filtered('lowpass',2200,.10);
-          timer=setInterval(()=>{
-            if(playing && Math.random()>.15){
-              const f=450+Math.random()*950;
-              tone(f,.22,'sine',.025);
-              setTimeout(()=>{if(playing)tone(f*1.35,.16,'sine',.018)},80);
-            }
-          },180);
-        }
-        else if(kind==='Crackling fireplace'){
-          // Distinct, sparse, short pops over a low warm fire-like rumble.
-          filtered('lowpass',180,.22);
-          timer=setInterval(()=>{
-            if(playing && Math.random()>.48){
-              const f=900+Math.random()*2600;
-              tone(f,.012,'triangle',.32);
-              if(Math.random()>.55)setTimeout(()=>{if(playing)tone(f*.72,.018,'triangle',.22)},35);
-            }
-          },240);
-        }
-        else{filtered('lowpass',450,.05);timer=setInterval(()=>{if(playing){const f=2700+Math.random()*1100;tone(f,.09,'sine',.18);setTimeout(()=>{if(playing)tone(f,.08,'sine',.16)},140)}},700);}
-      }
-      toggle.addEventListener('click',()=>{try{if(!playing){playing=true;start();toggle.textContent='■ Stop sound';status.textContent='Playing: '+kind;}else{playing=false;clearNodes();if(master)master.disconnect();toggle.textContent='▶ Play sound';status.textContent='Stopped';}}catch(e){playing=false;status.textContent='Audio could not start. Click Play again.';toggle.textContent='▶ Play sound';}});
-      slider.addEventListener('input',()=>{value.textContent=slider.value+'%';if(master&&ctx)master.gain.setTargetAtTime(Number(slider.value)/100,ctx.currentTime,.04);});
-    })();
-    </script>
-    """.replace("__SOUND_KIND__", json.dumps(selected_sound)), height=115, scrolling=False)
-    if selected_sound == "Gentle stream":
-        st.caption("Real stream recording by Amada44, licensed CC BY-SA 4.0. [Source and license](https://commons.wikimedia.org/wiki/File:Sound_Effects_-_The_sound_of_a_small_stream.ogg).")
-    elif selected_sound == "Crackling fireplace":
-        st.caption("Real campfire recording by Glaneur de sons, licensed CC BY 3.0. [Source and license](https://commons.wikimedia.org/wiki/File:Campfire_sound_ambience.ogg).")
-    else:
-        st.caption("These other ambient soundscapes are synthesized in your browser. Press Play to start audio.")
+    sound_options = [
+        "Soft piano",
+        "Calm ambient",
+        "Gentle guitar",
+        "Peaceful meditation",
+        "Slow instrumental"
+    ]
+    music_sources = {
+        "Soft piano": "https://cdn.pixabay.com/download/audio/2022/10/25/audio_946b2f9a5e.mp3",
+        "Calm ambient": "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8b3f2b2c4.mp3",
+        "Gentle guitar": "https://cdn.pixabay.com/download/audio/2022/08/02/audio_884fe92c21.mp3",
+        "Peaceful meditation": "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",
+        "Slow instrumental": "https://cdn.pixabay.com/download/audio/2022/03/15/audio_783b2c6c2b.mp3",
+    }
+    selected_sound = st.selectbox("Instrumental style", sound_options, key="mindheal_relax_choice")
+    audio_url = music_sources[selected_sound]
+    st.audio(audio_url, format="audio/mp3")
+    st.caption("If a track does not load, the host may have changed or restricted its direct audio link. Use the player controls to play or pause.")
 
 st.caption("MindHeal AI • Music can complement wellbeing practices, but it is not a substitute for professional care.")
