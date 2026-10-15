@@ -292,8 +292,8 @@ with tab_relax:
 
       // Use real, licensed field recordings for these two sounds instead of synthesized approximations.
       const realSources={
-        'Gentle stream':'https://commons.wikimedia.org/wiki/Special:Redirect/file/Sound_Effects_-_The_sound_of_a_small_stream.ogg',
-        'Crackling fireplace':'https://commons.wikimedia.org/wiki/Special:Redirect/file/Campfire_sound_ambience.ogg'
+        'Gentle stream':'https://commons.wikimedia.org/wiki/Special:Redirect/file/Sound_Effects_-_The_sound_of_a_small_stream.ogg?download=1',
+        'Crackling fireplace':'https://upload.wikimedia.org/wikipedia/commons/transcoded/b/b1/Campfire_sound_ambience.ogg/Campfire_sound_ambience.ogg.mp3'
       };
       if(realSources[kind]){
         const audio=new Audio(realSources[kind]);
