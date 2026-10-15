@@ -274,7 +274,7 @@ with tab_convert:
 
 with tab_relax:
     st.subheader("Soft instrumental music")
-    st.write("Choose a gentle instrumental soundscape for relaxing, breathing, reading, or winding down.")
+    st.write("Gentle, generated instrumental tones that play directly in your browser without external audio links.")
 
     sound_options = [
         "Soft piano",
@@ -283,16 +283,69 @@ with tab_relax:
         "Peaceful meditation",
         "Slow instrumental"
     ]
-    music_sources = {
-        "Soft piano": "https://cdn.pixabay.com/download/audio/2022/10/25/audio_946b2f9a5e.mp3",
-        "Calm ambient": "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8b3f2b2c4.mp3",
-        "Gentle guitar": "https://cdn.pixabay.com/download/audio/2022/08/02/audio_884fe92c21.mp3",
-        "Peaceful meditation": "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",
-        "Slow instrumental": "https://cdn.pixabay.com/download/audio/2022/03/15/audio_783b2c6c2b.mp3",
-    }
     selected_sound = st.selectbox("Instrumental style", sound_options, key="mindheal_relax_choice")
-    audio_url = music_sources[selected_sound]
-    st.audio(audio_url, format="audio/mp3")
-    st.caption("If a track does not load, the host may have changed or restricted its direct audio link. Use the player controls to play or pause.")
+    components.html("""
+    <div id="mh-music" style="font-family:Arial,sans-serif;max-width:340px;color:#173b2d">
+      <button id="mh-play" style="border:0;border-radius:8px;padding:9px 15px;background:#2f7655;color:white;font-size:14px;cursor:pointer">▶ Play music</button>
+      <label for="mh-vol" style="display:block;margin-top:10px;font-size:12px">Volume <span id="mh-v">45%</span></label>
+      <input id="mh-vol" type="range" min="0" max="100" value="45" style="width:100%;accent-color:#2f7655">
+      <div id="mh-msg" style="font-size:12px;color:#5c7064;margin-top:5px">Ready to play</div>
+    </div>
+    <script>
+    (() => {
+      const root=document.getElementById('mh-music');
+      if(!root || root.dataset.ready) return;
+      root.dataset.ready='1';
+      const btn=root.querySelector('#mh-play'), slider=root.querySelector('#mh-vol');
+      const val=root.querySelector('#mh-v'), msg=root.querySelector('#mh-msg');
+      const style=__STYLE__;
+      let ctx=null, master=null, playing=false, timer=null, oscillators=[];
+      const progressions = {
+        'Soft piano': [[261.63,329.63,392.00],[220.00,261.63,329.63],[174.61,220.00,261.63],[196.00,246.94,293.66]],
+        'Calm ambient': [[174.61,220.00,261.63],[196.00,246.94,293.66],[146.83,196.00,220.00],[164.81,207.65,246.94]],
+        'Gentle guitar': [[196.00,246.94,293.66],[164.81,207.65,246.94],[174.61,220.00,261.63],[146.83,196.00,220.00]],
+        'Peaceful meditation': [[130.81,196.00,261.63],[146.83,220.00,293.66],[110.00,164.81,220.00],[130.81,196.00,246.94]],
+        'Slow instrumental': [[174.61,220.00,261.63],[164.81,207.65,246.94],[146.83,196.00,246.94],[130.81,196.00,261.63]]
+      };
+      function stopNotes(){
+        if(timer){clearInterval(timer);timer=null;}
+        oscillators.forEach(o=>{try{o.stop()}catch(e){}});
+        oscillators=[];
+      }
+      function chord(index){
+        if(!ctx||!master)return;
+        const notes=progressions[style][index%progressions[style].length];
+        notes.forEach((freq,i)=>{
+          const osc=ctx.createOscillator(), gain=ctx.createGain();
+          osc.type=(style==='Gentle guitar'?'triangle':'sine');
+          osc.frequency.value=freq*(i===2?2:1);
+          gain.gain.setValueAtTime(0.0001,ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime((i===0?0.055:0.025)*(Number(slider.value)/100),ctx.currentTime+1.2);
+          gain.gain.setValueAtTime((i===0?0.055:0.025)*(Number(slider.value)/100),ctx.currentTime+4.5);
+          gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+7.5);
+          osc.connect(gain);gain.connect(master);osc.start();osc.stop(ctx.currentTime+7.6);
+          oscillators.push(osc);
+        });
+      }
+      btn.addEventListener('click',async()=>{
+        try{
+          if(!playing){
+            ctx=ctx||new(window.AudioContext||window.webkitAudioContext)();
+            await ctx.resume();
+            master=ctx.createGain();master.gain.value=1;master.connect(ctx.destination);
+            playing=true;chord(0);
+            let i=1;timer=setInterval(()=>{if(playing)chord(i++)},7500);
+            btn.textContent='■ Stop music';msg.textContent='Playing: '+style;
+          }else{
+            playing=false;stopNotes();if(master){try{master.disconnect()}catch(e){}}
+            btn.textContent='▶ Play music';msg.textContent='Stopped';
+          }
+        }catch(e){playing=false;btn.textContent='▶ Play music';msg.textContent='Audio could not start. Click Play again.';}
+      });
+      slider.addEventListener('input',()=>{val.textContent=slider.value+'%';});
+    })();
+    </script>
+    """.replace("__STYLE__", json.dumps(selected_sound)), height=115, scrolling=False)
+    st.caption("These are gentle synthesized instrumental tones, not recorded songs. No external audio links are needed.")
 
 st.caption("MindHeal AI • Music can complement wellbeing practices, but it is not a substitute for professional care.")
