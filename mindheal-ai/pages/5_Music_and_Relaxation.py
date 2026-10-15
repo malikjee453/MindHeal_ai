@@ -289,6 +289,44 @@ with tab_relax:
       const root=document.getElementById('mh-audio'); if(!root||root.dataset.ready)return; root.dataset.ready='1';
       const toggle=root.querySelector('#mh-toggle'), slider=root.querySelector('#mh-volume'), value=root.querySelector('#mh-volume-value'), status=root.querySelector('#mh-status');
       const kind=__SOUND_KIND__; let ctx=null, master=null, timer=null, nodes=[], playing=false;
+
+      // Use real, licensed field recordings for these two sounds instead of synthesized approximations.
+      const realSources={
+        'Gentle stream':'https://commons.wikimedia.org/wiki/Special:Redirect/file/Sound_Effects_-_The_sound_of_a_small_stream.ogg',
+        'Crackling fireplace':'https://commons.wikimedia.org/wiki/Special:Redirect/file/Campfire_sound_ambience.ogg'
+      };
+      if(realSources[kind]){
+        const audio=new Audio(realSources[kind]);
+        audio.loop=true;
+        audio.volume=Number(slider.value)/100;
+        toggle.addEventListener('click',async()=>{
+          try{
+            if(!playing){
+              await audio.play();
+              playing=true;
+              toggle.textContent='■ Stop sound';
+              status.textContent='Playing: '+kind;
+            }else{
+              audio.pause();
+              audio.currentTime=0;
+              playing=false;
+              toggle.textContent='▶ Play sound';
+              status.textContent='Stopped';
+            }
+          }catch(e){
+            playing=false;
+            toggle.textContent='▶ Play sound';
+            status.textContent='Could not load audio. Please try again.';
+          }
+        });
+        slider.addEventListener('input',()=>{
+          value.textContent=slider.value+'%';
+          audio.volume=Number(slider.value)/100;
+        });
+        audio.addEventListener('ended',()=>{playing=false;toggle.textContent='▶ Play sound';status.textContent='Ready to play';});
+        return;
+      }
+
       function clearNodes(){if(timer){clearInterval(timer);timer=null;}nodes.forEach(n=>{try{if(n.stop)n.stop();}catch(e){}try{n.disconnect();}catch(e){}});nodes=[];}
       function noise(){const b=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;const s=ctx.createBufferSource();s.buffer=b;s.loop=true;nodes.push(s);return s;}
       function filtered(type,freq,gain){const s=noise(),f=ctx.createBiquadFilter(),g=ctx.createGain();f.type=type;f.frequency.value=freq;g.gain.value=gain;s.connect(f);f.connect(g);g.connect(master);s.start();nodes.push(f,g);}
@@ -328,6 +366,11 @@ with tab_relax:
     })();
     </script>
     """.replace("__SOUND_KIND__", json.dumps(selected_sound)), height=115, scrolling=False)
-    st.caption("These are synthesized ambient soundscapes rather than field recordings. Press Play to start audio.")
+    if selected_sound == "Gentle stream":
+        st.caption("Real stream recording by Amada44, licensed CC BY-SA 4.0. [Source and license](https://commons.wikimedia.org/wiki/File:Sound_Effects_-_The_sound_of_a_small_stream.ogg).")
+    elif selected_sound == "Crackling fireplace":
+        st.caption("Real campfire recording by Glaneur de sons, licensed CC BY 3.0. [Source and license](https://commons.wikimedia.org/wiki/File:Campfire_sound_ambience.ogg).")
+    else:
+        st.caption("These other ambient soundscapes are synthesized in your browser. Press Play to start audio.")
 
 st.caption("MindHeal AI • Music can complement wellbeing practices, but it is not a substitute for professional care.")
