@@ -274,7 +274,7 @@ with tab_convert:
 
 with tab_relax:
     st.subheader("Soft instrumental music")
-    st.write("Gentle, generated instrumental tones that play directly in your browser without external audio links.")
+    st.write("Choose a distinct gentle instrumental style. Each option uses its own rhythm, tone, and chord progression.")
 
     sound_options = [
         "Soft piano",
@@ -299,53 +299,53 @@ with tab_relax:
       const btn=root.querySelector('#mh-play'), slider=root.querySelector('#mh-vol');
       const val=root.querySelector('#mh-v'), msg=root.querySelector('#mh-msg');
       const style=__STYLE__;
-      let ctx=null, master=null, playing=false, timer=null, oscillators=[];
-      const progressions = {
-        'Soft piano': [[261.63,329.63,392.00],[220.00,261.63,329.63],[174.61,220.00,261.63],[196.00,246.94,293.66]],
-        'Calm ambient': [[174.61,220.00,261.63],[196.00,246.94,293.66],[146.83,196.00,220.00],[164.81,207.65,246.94]],
-        'Gentle guitar': [[196.00,246.94,293.66],[164.81,207.65,246.94],[174.61,220.00,261.63],[146.83,196.00,220.00]],
-        'Peaceful meditation': [[130.81,196.00,261.63],[146.83,220.00,293.66],[110.00,164.81,220.00],[130.81,196.00,246.94]],
-        'Slow instrumental': [[174.61,220.00,261.63],[164.81,207.65,246.94],[146.83,196.00,246.94],[130.81,196.00,261.63]]
+      let ctx=null, master=null, playing=false, timer=null, active=[];
+      const settings={
+        'Soft piano': {wave:'triangle', base:1, interval:5200, notes:[[261.63,329.63,392],[293.66,349.23,440],[246.94,329.63,392],[220,293.66,369.99]]},
+        'Calm ambient': {wave:'sine', base:.62, interval:9000, notes:[[130.81,196,261.63,329.63],[146.83,220,293.66,349.23],[110,164.81,220,261.63],[123.47,185,246.94,293.66]]},
+        'Gentle guitar': {wave:'triangle', base:.8, interval:4300, notes:[[196,246.94,293.66],[220,261.63,329.63],[174.61,220,261.63],[164.81,207.65,246.94]]},
+        'Peaceful meditation': {wave:'sine', base:.45, interval:10000, notes:[[110,164.81,220],[123.47,185,246.94],[98,146.83,196],[110,174.61,220]]},
+        'Slow instrumental': {wave:'sine', base:.72, interval:6800, notes:[[174.61,220,261.63],[196,246.94,293.66],[164.81,207.65,246.94],[146.83,196,246.94]]}
       };
-      function stopNotes(){
-        if(timer){clearInterval(timer);timer=null;}
-        oscillators.forEach(o=>{try{o.stop()}catch(e){}});
-        oscillators=[];
-      }
-      function chord(index){
-        if(!ctx||!master)return;
-        const notes=progressions[style][index%progressions[style].length];
-        notes.forEach((freq,i)=>{
+      function playChord(index){
+        if(!ctx||!master||!playing)return;
+        const cfg=settings[style], chord=cfg.notes[index%cfg.notes.length], now=ctx.currentTime;
+        chord.forEach((freq,i)=>{
           const osc=ctx.createOscillator(), gain=ctx.createGain();
-          osc.type=(style==='Gentle guitar'?'triangle':'sine');
-          osc.frequency.value=freq*(i===2?2:1);
-          gain.gain.setValueAtTime(0.0001,ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime((i===0?0.055:0.025)*(Number(slider.value)/100),ctx.currentTime+1.2);
-          gain.gain.setValueAtTime((i===0?0.055:0.025)*(Number(slider.value)/100),ctx.currentTime+4.5);
-          gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+7.5);
-          osc.connect(gain);gain.connect(master);osc.start();osc.stop(ctx.currentTime+7.6);
-          oscillators.push(osc);
+          osc.type=cfg.wave;
+          osc.frequency.setValueAtTime(freq*(style==='Soft piano'&&i===2?2:1),now);
+          if(style==='Gentle guitar') osc.detune.setValueAtTime((i%2?3:-3),now);
+          gain.gain.setValueAtTime(.0001,now);
+          gain.gain.exponentialRampToValueAtTime(cfg.base*(i===0?.055:.025)*(Number(slider.value)/100),now+ (style==='Soft piano'?.04:1.4));
+          gain.gain.setValueAtTime(cfg.base*(i===0?.055:.025)*(Number(slider.value)/100),now+2.2);
+          gain.gain.exponentialRampToValueAtTime(.0001,now+cfg.interval/1000);
+          osc.connect(gain);gain.connect(master);osc.start(now);osc.stop(now+cfg.interval/1000+.05);
+          active.push(osc);
         });
+      }
+      function stop(){
+        playing=false;
+        if(timer){clearInterval(timer);timer=null;}
+        active.forEach(o=>{try{o.stop()}catch(e){}});
+        active=[];
+        if(master){try{master.disconnect()}catch(e){}}
+        btn.textContent='▶ Play music';msg.textContent='Stopped';
       }
       btn.addEventListener('click',async()=>{
         try{
-          if(!playing){
-            ctx=ctx||new(window.AudioContext||window.webkitAudioContext)();
-            await ctx.resume();
-            master=ctx.createGain();master.gain.value=1;master.connect(ctx.destination);
-            playing=true;chord(0);
-            let i=1;timer=setInterval(()=>{if(playing)chord(i++)},7500);
-            btn.textContent='■ Stop music';msg.textContent='Playing: '+style;
-          }else{
-            playing=false;stopNotes();if(master){try{master.disconnect()}catch(e){}}
-            btn.textContent='▶ Play music';msg.textContent='Stopped';
-          }
-        }catch(e){playing=false;btn.textContent='▶ Play music';msg.textContent='Audio could not start. Click Play again.';}
+          if(playing){stop();return;}
+          ctx=ctx||new(window.AudioContext||window.webkitAudioContext)();
+          await ctx.resume();
+          master=ctx.createGain();master.gain.value=1;master.connect(ctx.destination);
+          playing=true;playChord(0);
+          let i=1;timer=setInterval(()=>playChord(i++),settings[style].interval);
+          btn.textContent='■ Stop music';msg.textContent='Playing: '+style;
+        }catch(e){stop();msg.textContent='Audio could not start. Click Play again.';}
       });
       slider.addEventListener('input',()=>{val.textContent=slider.value+'%';});
     })();
     </script>
     """.replace("__STYLE__", json.dumps(selected_sound)), height=115, scrolling=False)
-    st.caption("These are gentle synthesized instrumental tones, not recorded songs. No external audio links are needed.")
+    st.caption("These are generated instrumental tones rather than recorded performances. The five choices use different note ranges, timbres, and pacing.")
 
 st.caption("MindHeal AI • Music can complement wellbeing practices, but it is not a substitute for professional care.")
