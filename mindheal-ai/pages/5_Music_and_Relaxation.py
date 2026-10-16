@@ -274,78 +274,39 @@ with tab_convert:
 
 with tab_relax:
     st.subheader("Soft instrumental music")
-    st.write("Choose a distinct gentle instrumental style. Each option uses its own rhythm, tone, and chord progression.")
+    st.write("Each choice now plays a separate real audio recording. No synthesized tones or shared sound generator.")
 
-    sound_options = [
-        "Soft piano",
-        "Calm ambient",
-        "Gentle guitar",
-        "Peaceful meditation",
-        "Slow instrumental"
-    ]
-    selected_sound = st.selectbox("Instrumental style", sound_options, key="mindheal_relax_choice")
-    components.html("""
-    <div id="mh-music" style="font-family:Arial,sans-serif;max-width:340px;color:#173b2d">
-      <button id="mh-play" style="border:0;border-radius:8px;padding:9px 15px;background:#2f7655;color:white;font-size:14px;cursor:pointer">▶ Play music</button>
-      <label for="mh-vol" style="display:block;margin-top:10px;font-size:12px">Volume <span id="mh-v">45%</span></label>
-      <input id="mh-vol" type="range" min="0" max="100" value="45" style="width:100%;accent-color:#2f7655">
-      <div id="mh-msg" style="font-size:12px;color:#5c7064;margin-top:5px">Ready to play</div>
-    </div>
-    <script>
-    (() => {
-      const root=document.getElementById('mh-music');
-      if(!root || root.dataset.ready) return;
-      root.dataset.ready='1';
-      const btn=root.querySelector('#mh-play'), slider=root.querySelector('#mh-vol');
-      const val=root.querySelector('#mh-v'), msg=root.querySelector('#mh-msg');
-      const style=__STYLE__;
-      let ctx=null, master=null, playing=false, timer=null, active=[];
-      const settings={
-        'Soft piano': {wave:'triangle', base:1, interval:5200, notes:[[261.63,329.63,392],[293.66,349.23,440],[246.94,329.63,392],[220,293.66,369.99]]},
-        'Calm ambient': {wave:'sine', base:.62, interval:9000, notes:[[130.81,196,261.63,329.63],[146.83,220,293.66,349.23],[110,164.81,220,261.63],[123.47,185,246.94,293.66]]},
-        'Gentle guitar': {wave:'triangle', base:.8, interval:4300, notes:[[196,246.94,293.66],[220,261.63,329.63],[174.61,220,261.63],[164.81,207.65,246.94]]},
-        'Peaceful meditation': {wave:'sine', base:.45, interval:10000, notes:[[110,164.81,220],[123.47,185,246.94],[98,146.83,196],[110,174.61,220]]},
-        'Slow instrumental': {wave:'sine', base:.72, interval:6800, notes:[[174.61,220,261.63],[196,246.94,293.66],[164.81,207.65,246.94],[146.83,196,246.94]]}
-      };
-      function playChord(index){
-        if(!ctx||!master||!playing)return;
-        const cfg=settings[style], chord=cfg.notes[index%cfg.notes.length], now=ctx.currentTime;
-        chord.forEach((freq,i)=>{
-          const osc=ctx.createOscillator(), gain=ctx.createGain();
-          osc.type=cfg.wave;
-          osc.frequency.setValueAtTime(freq*(style==='Soft piano'&&i===2?2:1),now);
-          if(style==='Gentle guitar') osc.detune.setValueAtTime((i%2?3:-3),now);
-          gain.gain.setValueAtTime(.0001,now);
-          gain.gain.exponentialRampToValueAtTime(cfg.base*(i===0?.055:.025)*(Number(slider.value)/100),now+ (style==='Soft piano'?.04:1.4));
-          gain.gain.setValueAtTime(cfg.base*(i===0?.055:.025)*(Number(slider.value)/100),now+2.2);
-          gain.gain.exponentialRampToValueAtTime(.0001,now+cfg.interval/1000);
-          osc.connect(gain);gain.connect(master);osc.start(now);osc.stop(now+cfg.interval/1000+.05);
-          active.push(osc);
-        });
-      }
-      function stop(){
-        playing=false;
-        if(timer){clearInterval(timer);timer=null;}
-        active.forEach(o=>{try{o.stop()}catch(e){}});
-        active=[];
-        if(master){try{master.disconnect()}catch(e){}}
-        btn.textContent='▶ Play music';msg.textContent='Stopped';
-      }
-      btn.addEventListener('click',async()=>{
-        try{
-          if(playing){stop();return;}
-          ctx=ctx||new(window.AudioContext||window.webkitAudioContext)();
-          await ctx.resume();
-          master=ctx.createGain();master.gain.value=1;master.connect(ctx.destination);
-          playing=true;playChord(0);
-          let i=1;timer=setInterval(()=>playChord(i++),settings[style].interval);
-          btn.textContent='■ Stop music';msg.textContent='Playing: '+style;
-        }catch(e){stop();msg.textContent='Audio could not start. Click Play again.';}
-      });
-      slider.addEventListener('input',()=>{val.textContent=slider.value+'%';});
-    })();
-    </script>
-    """.replace("__STYLE__", json.dumps(selected_sound)), height=115, scrolling=False)
-    st.caption("These are generated instrumental tones rather than recorded performances. The five choices use different note ranges, timbres, and pacing.")
+    tracks = {
+        "Piano instrumental (48 sec)": {
+            "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Shumi-Marista_Piano_Instrumental.ogg",
+            "credit": "Parchokhalq — CC0 public domain dedication",
+            "source": "https://commons.wikimedia.org/wiki/File:Shumi-Marista_Piano_Instrumental.ogg",
+        },
+        "Emotional piano (16 sec)": {
+            "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Emotional_piano.wav",
+            "credit": "triangelx / Kamil-b — CC0 public domain dedication",
+            "source": "https://commons.wikimedia.org/wiki/File:Emotional_piano.wav",
+        },
+        "Soft flute melody (13 sec)": {
+            "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Flute.ogg",
+            "credit": "hokuspokus — public domain",
+            "source": "https://commons.wikimedia.org/wiki/File:Flute.ogg",
+        },
+        "Meditation gong (16 sec)": {
+            "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Meditation_Gong.ogg",
+            "credit": "Marble Toast — CC0 public domain dedication",
+            "source": "https://commons.wikimedia.org/wiki/File:Meditation_Gong.ogg",
+        },
+        "Native American flute (72 sec)": {
+            "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Native_American_flute2.ogg",
+            "credit": "Original uploader — Creative Commons Attribution-ShareAlike (see source page)",
+            "source": "https://commons.wikimedia.org/wiki/File:Native_American_flute2.ogg",
+        },
+    }
+    selected_track = st.selectbox("Choose a track", list(tracks.keys()), key="mindheal_relax_choice")
+    track = tracks[selected_track]
+    st.audio(track["url"], format="audio/ogg")
+    st.caption(f"Recording: {track['credit']}. [Source and license]({track['source']}).")
+    st.info("These recordings are short samples of different instruments, not long looping background tracks. Use the player controls to replay or adjust volume.")
 
 st.caption("MindHeal AI • Music can complement wellbeing practices, but it is not a substitute for professional care.")
