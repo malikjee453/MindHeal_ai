@@ -278,34 +278,34 @@ with tab_relax:
 
     tracks = {
         "Piano instrumental (48 sec)": {
-            "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Shumi-Marista_Piano_Instrumental.ogg",
+            "url": "https://upload.wikimedia.org/wikipedia/commons/c/c0/Shumi-Marista_Piano_Instrumental.ogg",
             "credit": "Parchokhalq — CC0 public domain dedication",
             "source": "https://commons.wikimedia.org/wiki/File:Shumi-Marista_Piano_Instrumental.ogg",
         },
         "Emotional piano (16 sec)": {
-            "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Emotional_piano.wav",
+            "url": "https://upload.wikimedia.org/wikipedia/commons/a/aa/Emotional_piano.wav",
             "credit": "triangelx / Kamil-b — CC0 public domain dedication",
             "source": "https://commons.wikimedia.org/wiki/File:Emotional_piano.wav",
         },
         "Soft flute melody (13 sec)": {
-            "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Flute.ogg",
+            "url": "https://upload.wikimedia.org/wikipedia/commons/0/05/Flute.ogg",
             "credit": "hokuspokus — public domain",
             "source": "https://commons.wikimedia.org/wiki/File:Flute.ogg",
         },
         "Meditation gong (16 sec)": {
-            "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Meditation_Gong.ogg",
+            "url": "https://upload.wikimedia.org/wikipedia/commons/a/ad/Meditation_Gong.ogg",
             "credit": "Marble Toast — CC0 public domain dedication",
             "source": "https://commons.wikimedia.org/wiki/File:Meditation_Gong.ogg",
         },
         "Native American flute (72 sec)": {
-            "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Native_American_flute2.ogg",
+            "url": "https://upload.wikimedia.org/wikipedia/commons/8/85/Native_American_flute2.ogg",
             "credit": "Original uploader — Creative Commons Attribution-ShareAlike (see source page)",
             "source": "https://commons.wikimedia.org/wiki/File:Native_American_flute2.ogg",
         },
     }
     selected_track = st.selectbox("Choose a track", list(tracks.keys()), key="mindheal_relax_choice")
     track = tracks[selected_track]
-    st.audio(track["url"], format="audio/ogg")
+    st.audio(track["url"])
     st.caption(f"Recording: {track['credit']}. [Source and license]({track['source']}).")
     st.info("These recordings are short samples of different instruments, not long looping background tracks. Use the player controls to replay or adjust volume.")
 
