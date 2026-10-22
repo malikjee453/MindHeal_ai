@@ -283,6 +283,45 @@ with tab_relax:
         help="Supported formats: MP3, WAV, OGG, M4A, AAC, FLAC",
     )
     if uploaded_music is not None:
-        st.audio(uploaded_music)
+        # Keep the selected file in Streamlit session state so ordinary reruns
+        # don't discard the user's selection.
+        st.session_state["mindheal_music_bytes"] = uploaded_music.getvalue()
+        st.session_state["mindheal_music_name"] = uploaded_music.name
+        st.session_state["mindheal_music_type"] = uploaded_music.type or "audio/mpeg"
+
+    music_bytes = st.session_state.get("mindheal_music_bytes")
+    music_name = st.session_state.get("mindheal_music_name", "uploaded music")
+    music_type = st.session_state.get("mindheal_music_type", "audio/mpeg")
+
+    if music_bytes:
+        import base64
+        encoded_audio = base64.b64encode(music_bytes).decode("ascii")
+        st.caption(f"Selected: {music_name}")
+        components.html("""
+        <div style="font-family:Arial,sans-serif;max-width:520px;color:#173b2d">
+          <audio id="mh-uploaded-music" controls loop preload="metadata"
+            style="width:100%">
+            Your browser does not support audio playback.
+          </audio>
+          <div style="font-size:13px;margin-top:7px;color:#5c7064">
+            Turn on Loop to keep the music repeating. Use Stop music to end playback.
+          </div>
+          <button id="mh-stop-music" type="button"
+            style="margin-top:8px;border:0;border-radius:8px;padding:8px 14px;background:#2f7655;color:white;cursor:pointer">
+            ■ Stop music
+          </button>
+        </div>
+        <script>
+        (() => {
+          const audio=document.getElementById('mh-uploaded-music');
+          const stop=document.getElementById('mh-stop-music');
+          if(!audio || audio.dataset.ready)return;
+          audio.dataset.ready='1';
+          audio.src='data:__MIME__;base64,__AUDIO_DATA__';
+          audio.loop=true;
+          stop.addEventListener('click',()=>{audio.pause();audio.currentTime=0;});
+        })();
+        </script>
+        """.replace("__MIME__", json.dumps(music_type)[1:-1]).replace("__AUDIO_DATA__", encoded_audio), height=125, scrolling=False)
 
 st.caption("MindHeal AI • Music can complement wellbeing practices, but it is not a substitute for professional care.")
