@@ -273,40 +273,16 @@ with tab_convert:
     st.caption("Safety limits: HTTPS only, public hosts only, no redirects, maximum 40 MB input and 10 minutes of converted audio. Some hosts block server downloads. Convert only media you own or are authorized to use.")
 
 with tab_relax:
-    st.subheader("Soft instrumental music")
-    st.write("Five distinct, real instrumental recordings hosted by Wikimedia Commons. The audio player detects the media format automatically.")
+    st.subheader("Click to upload music from device")
+    st.write("Upload an audio file from your computer to listen to your own music.")
 
-    tracks = {
-        "Piano and beat — 4:55": {
-            "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Piano_and_beat.ogg",
-            "credit": "Wiki Learning Tec de Monterrey; CC BY-SA 4.0",
-            "source": "https://commons.wikimedia.org/wiki/File:Piano_and_beat.ogg",
-        },
-        "Sun Meditation — 12:59": {
-            "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Sun-Meditation.ogg",
-            "credit": "Nobody60; CC BY-SA 3.0",
-            "source": "https://commons.wikimedia.org/wiki/File:Sun-Meditation.ogg",
-        },
-        "Yoga Meditation — 7:50": {
-            "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Yoga-Meditation.ogg",
-            "credit": "Nobody60; CC BY-SA 3.0",
-            "source": "https://commons.wikimedia.org/wiki/File:Yoga-Meditation.ogg",
-        },
-        "Long Trail — 3:49": {
-            "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Kevin_MacLeod_-_Long_Trail.ogg",
-            "credit": "Kevin MacLeod; public domain dedication",
-            "source": "https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Long_Trail.ogg",
-        },
-        "Placid Ambient — 2:22": {
-            "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Placid_Ambient_by_MusicLFiles.ogg",
-            "credit": "MusicLFiles; see source page for license",
-            "source": "https://commons.wikimedia.org/wiki/File:Placid_Ambient_by_MusicLFiles.ogg",
-        },
-    }
-    selected_track = st.selectbox("Choose a track", list(tracks.keys()), key="mindheal_relax_choice")
-    track = tracks[selected_track]
-    st.audio(track["url"])
-    st.caption(f"Recording: {track['credit']}. [Source and license]({track['source']}).")
-    st.info("These are full-length recordings with different music and durations. If a player still displays 0:00, the deployment may be serving a cached version or the host may be blocked on your network.")
+    uploaded_music = st.file_uploader(
+        "Click to upload music from device",
+        type=["mp3", "wav", "ogg", "m4a", "aac", "flac"],
+        key="mindheal_music_upload",
+        help="Supported formats: MP3, WAV, OGG, M4A, AAC, FLAC",
+    )
+    if uploaded_music is not None:
+        st.audio(uploaded_music)
 
 st.caption("MindHeal AI • Music can complement wellbeing practices, but it is not a substitute for professional care.")
