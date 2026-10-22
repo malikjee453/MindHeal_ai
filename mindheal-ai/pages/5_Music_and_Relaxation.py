@@ -273,8 +273,12 @@ with tab_convert:
     st.caption("Safety limits: HTTPS only, public hosts only, no redirects, maximum 40 MB input and 10 minutes of converted audio. Some hosts block server downloads. Convert only media you own or are authorized to use.")
 
 with tab_relax:
-    st.subheader("Click to upload music from device")
-    st.write("Upload an audio file from your computer to listen to your own music.")
+    st.subheader("🎵 Music that keeps playing while you chat")
+    st.write(
+        "Upload your music, then click **Open persistent music player**. "
+        "A separate small player window will keep playing while you use the Chat, "
+        "Mental Discomforts, Addictions, or Fears pages. Keep that player window open."
+    )
 
     uploaded_music = st.file_uploader(
         "Click to upload music from device",
@@ -299,14 +303,12 @@ with tab_relax:
         st.caption(f"Selected: {music_name}")
         components.html("""
         <div style="font-family:Arial,sans-serif;max-width:520px;color:#173b2d">
-          <audio id="mh-uploaded-music" controls loop preload="metadata" style="width:100%">
-            Your browser does not support audio playback.
-          </audio>
-          <div style="font-size:13px;margin-top:7px;color:#5c7064">
-            For music that continues while you chat or switch pages, open the separate player window below.
+          <div style="font-size:14px;margin:4px 0 8px;color:#173b2d">
+            Step 1: Open the separate player. Step 2: Press Play in that player.
+            Step 3: Leave its window open while you chat.
           </div>
-          <button id="mh-open-player" type="button" style="margin-top:8px;border:0;border-radius:8px;padding:9px 14px;background:#2f7655;color:white;cursor:pointer">
-            Open persistent music player
+          <button id="mh-open-player" type="button" style="margin-top:8px;border:0;border-radius:8px;padding:11px 16px;background:#2f7655;color:white;font-weight:700;cursor:pointer">
+            🎵 Open persistent music player
           </button>
           <div id="mh-player-status" style="font-size:12px;margin-top:6px;color:#5c7064" aria-live="polite"></div>
         </div>
