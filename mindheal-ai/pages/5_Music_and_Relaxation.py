@@ -299,29 +299,37 @@ with tab_relax:
         st.caption(f"Selected: {music_name}")
         components.html("""
         <div style="font-family:Arial,sans-serif;max-width:520px;color:#173b2d">
-          <audio id="mh-uploaded-music" controls loop preload="metadata"
-            style="width:100%">
+          <audio id="mh-uploaded-music" controls loop preload="metadata" style="width:100%">
             Your browser does not support audio playback.
           </audio>
           <div style="font-size:13px;margin-top:7px;color:#5c7064">
-            Turn on Loop to keep the music repeating. Use Stop music to end playback.
+            For music that continues while you chat or switch pages, open the separate player window below.
           </div>
-          <button id="mh-stop-music" type="button"
-            style="margin-top:8px;border:0;border-radius:8px;padding:8px 14px;background:#2f7655;color:white;cursor:pointer">
-            ■ Stop music
+          <button id="mh-open-player" type="button" style="margin-top:8px;border:0;border-radius:8px;padding:9px 14px;background:#2f7655;color:white;cursor:pointer">
+            Open persistent music player
           </button>
+          <div id="mh-player-status" style="font-size:12px;margin-top:6px;color:#5c7064" aria-live="polite"></div>
         </div>
         <script>
         (() => {
           const audio=document.getElementById('mh-uploaded-music');
-          const stop=document.getElementById('mh-stop-music');
+          const open=document.getElementById('mh-open-player');
+          const status=document.getElementById('mh-player-status');
           if(!audio || audio.dataset.ready)return;
           audio.dataset.ready='1';
-          audio.src='data:__MIME__;base64,__AUDIO_DATA__';
+          const source='data:__MIME__;base64,__AUDIO_DATA__';
+          audio.src=source;
           audio.loop=true;
-          stop.addEventListener('click',()=>{audio.pause();audio.currentTime=0;});
+          open.addEventListener('click',()=>{
+            const win=window.open('about:blank','mindheal_music_player','width=440,height=230,resizable=yes');
+            if(!win){status.textContent='Your browser blocked the new window. Allow pop-ups for this site and try again.';return;}
+            win.document.open();
+            win.document.write('<!doctype html><html><head><meta charset="utf-8"><title>MindHeal — Music Player</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font:16px Arial,sans-serif;background:#f5f9f6;color:#173b2d;padding:20px}h2{font-size:18px}audio{width:100%}button{border:0;border-radius:8px;padding:9px 14px;background:#2f7655;color:white;cursor:pointer;margin-top:10px}</style></head><body><h2>🌿 MindHeal music</h2><p>Music continues while you chat in the other window.</p><audio id="player" controls loop autoplay></audio><br><button id="stop">■ Stop music</button><script>const a=document.getElementById("player");a.src='+JSON.stringify(source)+';a.loop=true;document.getElementById("stop").onclick=()=>{a.pause();a.currentTime=0};a.play().catch(()=>{});<\/script></body></html>');
+            win.document.close();
+            status.textContent='Player opened. Keep its window open while chatting.';
+          });
         })();
         </script>
-        """.replace("__MIME__", json.dumps(music_type)[1:-1]).replace("__AUDIO_DATA__", encoded_audio), height=125, scrolling=False)
+        """.replace("__MIME__", json.dumps(music_type)[1:-1]).replace("__AUDIO_DATA__", encoded_audio), height=155, scrolling=False)
 
 st.caption("MindHeal AI • Music can complement wellbeing practices, but it is not a substitute for professional care.")
