@@ -314,21 +314,23 @@ with tab_relax:
         </div>
         <script>
         (() => {
-          const audio=document.getElementById('mh-uploaded-music');
           const open=document.getElementById('mh-open-player');
           const status=document.getElementById('mh-player-status');
-          if(!audio || audio.dataset.ready)return;
-          audio.dataset.ready='1';
+          if(!open || open.dataset.ready)return;
+          open.dataset.ready='1';
           const source='data:__MIME__;base64,__AUDIO_DATA__';
-          audio.src=source;
-          audio.loop=true;
           open.addEventListener('click',()=>{
             const win=window.open('about:blank','mindheal_music_player','width=440,height=230,resizable=yes');
-            if(!win){status.textContent='Your browser blocked the new window. Allow pop-ups for this site and try again.';return;}
+            if(!win){status.textContent='Popup blocked. Allow pop-ups for this Streamlit site, then click this button again.';return;}
+            try {
             win.document.open();
             win.document.write('<!doctype html><html><head><meta charset="utf-8"><title>MindHeal — Music Player</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font:16px Arial,sans-serif;background:#f5f9f6;color:#173b2d;padding:20px}h2{font-size:18px}audio{width:100%}button{border:0;border-radius:8px;padding:9px 14px;background:#2f7655;color:white;cursor:pointer;margin-top:10px}</style></head><body><h2>🌿 MindHeal music</h2><p>Music continues while you chat in the other window.</p><audio id="player" controls loop autoplay></audio><br><button id="stop">■ Stop music</button><script>const a=document.getElementById("player");a.src='+JSON.stringify(source)+';a.loop=true;document.getElementById("stop").onclick=()=>{a.pause();a.currentTime=0};a.play().catch(()=>{});<\/script></body></html>');
             win.document.close();
-            status.textContent='Player opened. Keep its window open while chatting.';
+            status.textContent='Player opened. Press Play in the new window and keep it open while chatting.';
+            } catch (err) {
+              win.close();
+              status.textContent='Could not create the player window. Allow pop-ups for this site and try again.';
+            }
           });
         })();
         </script>
