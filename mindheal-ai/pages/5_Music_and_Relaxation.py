@@ -304,8 +304,7 @@ with tab_relax:
         components.html("""
         <div style="font-family:Arial,sans-serif;max-width:520px;color:#173b2d">
           <div style="font-size:14px;margin:4px 0 8px;color:#173b2d">
-            Step 1: Open the separate player. Step 2: Press Play in that player.
-            Step 3: Leave its window open while you chat.
+            Click below to open a separate player. If playback does not start automatically, press Play in the player window.
           </div>
           <button id="mh-open-player" type="button" style="margin-top:8px;border:0;border-radius:8px;padding:11px 16px;background:#2f7655;color:white;font-weight:700;cursor:pointer">
             🎵 Open persistent music player
@@ -316,21 +315,19 @@ with tab_relax:
         (() => {
           const open=document.getElementById('mh-open-player');
           const status=document.getElementById('mh-player-status');
+          const source='data:__MIME__;base64,__AUDIO_DATA__';
           if(!open || open.dataset.ready)return;
           open.dataset.ready='1';
-          const source='data:__MIME__;base64,__AUDIO_DATA__';
           open.addEventListener('click',()=>{
-            const win=window.open('about:blank','mindheal_music_player','width=440,height=230,resizable=yes');
-            if(!win){status.textContent='Popup blocked. Allow pop-ups for this Streamlit site, then click this button again.';return;}
-            try {
+            // Open synchronously from the click to avoid popup blockers.
+            const win=window.open('about:blank','mindheal_music_player','width=440,height=260,resizable=yes');
+            if(!win){status.textContent='The browser blocked the player window. Allow pop-ups for this site, then click again.';return;}
+            const html='<!doctype html><html><head><meta charset="utf-8"><title>MindHeal — Music Player</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font:16px Arial,sans-serif;background:#f5f9f6;color:#173b2d;padding:20px}h2{font-size:18px}audio{width:100%}button{border:0;border-radius:8px;padding:9px 14px;background:#2f7655;color:white;cursor:pointer;margin-top:10px}</style></head><body><h2>🌿 MindHeal music</h2><p>Keep this window open while you chat.</p><audio id="player" controls loop preload="auto"></audio><br><button id="stop">■ Stop music</button><script>const a=document.getElementById("player");a.src='+JSON.stringify(source)+';a.loop=true;document.getElementById("stop").onclick=()=>{a.pause();a.currentTime=0};a.addEventListener("error",()=>{document.getElementById("msg").textContent="This audio format could not be played by your browser."});<\/script><p id="msg" style="font-size:12px"></p></body></html>';
             win.document.open();
-            win.document.write('<!doctype html><html><head><meta charset="utf-8"><title>MindHeal — Music Player</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font:16px Arial,sans-serif;background:#f5f9f6;color:#173b2d;padding:20px}h2{font-size:18px}audio{width:100%}button{border:0;border-radius:8px;padding:9px 14px;background:#2f7655;color:white;cursor:pointer;margin-top:10px}</style></head><body><h2>🌿 MindHeal music</h2><p>Music continues while you chat in the other window.</p><audio id="player" controls loop autoplay></audio><br><button id="stop">■ Stop music</button><script>const a=document.getElementById("player");a.src='+JSON.stringify(source)+';a.loop=true;document.getElementById("stop").onclick=()=>{a.pause();a.currentTime=0};a.play().catch(()=>{});<\/script></body></html>');
+            win.document.write(html);
             win.document.close();
-            status.textContent='Player opened. Press Play in the new window and keep it open while chatting.';
-            } catch (err) {
-              win.close();
-              status.textContent='Could not create the player window. Allow pop-ups for this site and try again.';
-            }
+            status.textContent='Player window opened. Press Play in that window if it does not start automatically.';
+            try { win.focus(); } catch(e) {}
           });
         })();
         </script>
