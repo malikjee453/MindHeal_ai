@@ -489,24 +489,13 @@ for message in st.session_state.messages:
 # The browser component remains responsible for microphone capture and speech playback.
 prompt = st.chat_input("Message MindHeal AI…")
 if VOICE_COMPONENT_READY:
-    _speak_latest = bool(st.session_state.get("_mindheal_speak_latest", False))
-    _latest_answer = ""
-    if _speak_latest and st.session_state.messages:
-        _last_message = st.session_state.messages[-1]
-        if _last_message.get("role") == "assistant":
-            _latest_answer = str(_last_message.get("content", ""))
     composer_result = VOICE_COMPONENT(
         language="ur-PK" if str(st.session_state.get("language", "English")).lower().startswith("urdu") else "en-US",
         clearToken=len(st.session_state.messages),
-        speakText=_latest_answer,
-        speakId=str(len(st.session_state.messages)) if _latest_answer else "",
-        speakLanguage="ur-PK" if str(st.session_state.get("language", "English")).lower().startswith("urdu") else "en-US",
         # Recreate the component after each completed turn so stale component values cannot block later sends.
         key=f"mindheal_browser_voice_{len(st.session_state.messages)}",
         default=None,
     )
-    if _speak_latest:
-        st.session_state["_mindheal_speak_latest"] = False
     if isinstance(composer_result, dict):
         composer_id = str(composer_result.get("id", ""))
         composer_text = str(composer_result.get("text", "")).strip()
@@ -519,7 +508,6 @@ if VOICE_COMPONENT_READY:
             # Clear the current UI session first; persistent memory cleanup is best-effort.
             st.session_state["_mindheal_last_new_chat_id"] = composer_id
             st.session_state.messages = []
-            st.session_state["_mindheal_speak_latest"] = False
             st.session_state.pop("_mindheal_last_composer_id", None)
             st.session_state.pop("_mindheal_last_voice_transcript", None)
             if memory.logged_in():
@@ -656,6 +644,5 @@ if prompt:
             # Chat should remain usable even if optional persistent memory is unavailable.
             pass
 
-    # Trigger a fresh component render so the latest reply is spoken once.
-    st.session_state["_mindheal_speak_latest"] = True
+    # Refresh the chat to display the completed response. Replies are text-only.
     st.rerun()

@@ -2,6 +2,11 @@ import streamlit as st
 
 from core.session import init_session
 from core.ui import render_disclaimer
+from core.visitor_counter import (
+    register_visitor,
+    render_visitor_gauge,
+    render_visitor_diagnostic,
+)
 
 st.set_page_config(page_title="MindHeal AI", page_icon="🌿", layout="wide")
 init_session()
@@ -88,4 +93,12 @@ with right:
     st.caption("You can personalize the app using its existing settings.")
 
 st.markdown('<div class="mh-note">🌱 &nbsp; You are welcome here, exactly as you are. No pressure to explain everything, and no need to have the right words.</div>', unsafe_allow_html=True)
+# Visitor counter (restored from the original project). It requires the existing
+# Supabase visitor-counter configuration; the homepage remains usable without it.
+visitor_count = register_visitor()
+if visitor_count is not None:
+    render_visitor_gauge(visitor_count, maximum=100000)
+else:
+    render_visitor_diagnostic()
+
 st.caption("MindHeal AI is a friendly emotional-support companion and is not a replacement for qualified professional care.")
