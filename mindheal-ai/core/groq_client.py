@@ -10,7 +10,9 @@ def _get_client():
             "GROQ_API_KEY is not configured. Add your Groq API key to the environment "
             "or Streamlit secrets, then restart the app."
         )
-    return Groq(api_key=api_key, timeout=30.0, max_retries=1)
+    # Do not retry slow chat requests automatically: retries can make the UI appear frozen.
+    # A single bounded attempt lets the app show its existing friendly error message promptly.
+    return Groq(api_key=api_key, timeout=20.0, max_retries=0)
 
 
 def chat(messages, temperature=0.7, **kwargs):
