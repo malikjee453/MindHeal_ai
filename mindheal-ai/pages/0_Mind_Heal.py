@@ -8,97 +8,171 @@ from core.visitor_counter import (
     render_visitor_diagnostic,
 )
 
-st.set_page_config(page_title="MindHeal AI", page_icon="🌿", layout="wide")
+st.set_page_config(page_title="MindHeal AI | Your Space to Talk", page_icon="🌿", layout="wide")
 init_session()
 render_disclaimer()
 
 st.markdown(
     """
     <style>
-    :root { --forest:#174d42; --green:#39856a; --mint:#eaf5ee; --line:#deebe1; --muted:#647e74; }
-    .stApp { background: #fbfdfb; }
-    .main .block-container { max-width: 1320px; padding-top: 1.5rem; padding-bottom: 3rem; }
-    h1,h2,h3,h4 { color:var(--forest) !important; }
-    [data-testid="stSidebar"] { background:linear-gradient(180deg,#eff8f1 0%,#e5f3e9 100%); border-right:1px solid #dcebe0; }
-    [data-testid="stSidebar"] [data-testid="stSidebarNav"] a { border-radius:12px !important; margin:3px 0 !important; }
-    .mh-brandline { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:1.15rem; flex-wrap:wrap; }
-    .mh-brand { display:flex; align-items:center; gap:11px; color:var(--forest); font-size:1.15rem; font-weight:800; }
-    .mh-brand-mark { width:44px; height:44px; display:flex; align-items:center; justify-content:center; background:#dcefe2; border-radius:15px; font-size:1.55rem; }
-    .mh-tag { color:#658176; border:1px solid var(--line); border-radius:999px; padding:8px 14px; background:#fff; font-size:.82rem; }
-    .mh-hero { position:relative; overflow:hidden; padding:clamp(25px,4vw,44px); border:1px solid #dcebe0; border-radius:25px; margin:.2rem 0 1.5rem; background:radial-gradient(circle at 88% 18%,rgba(255,255,255,.8),transparent 24%),linear-gradient(112deg,#e0f0e5 0%,#f7f7ed 57%,#d9ebe0 100%); }
-    .mh-hero:after { content:'♡'; position:absolute; right:5%; top:2%; font-size:7rem; color:rgba(45,125,89,.12); transform:rotate(12deg); }
-    .mh-eyebrow { color:#4b8267; font-size:.76rem; text-transform:uppercase; font-weight:800; letter-spacing:1.6px; margin-bottom:.65rem; }
-    .mh-hero h1 { font-size:clamp(2rem,4vw,3.15rem); line-height:1.1; letter-spacing:-1.2px; max-width:720px; margin:0 0 .8rem; }
-    .mh-hero p { max-width:700px; color:#526e64; font-size:1.03rem; line-height:1.75; margin:0; }
-    .mh-section-title { color:var(--forest); font-size:1.18rem; font-weight:800; margin:.8rem 0 .8rem; }
-    .mh-card { height:100%; min-height:158px; background:#fff; border:1px solid #e1ece4; border-radius:19px; padding:20px; box-shadow:0 5px 20px rgba(27,76,57,.035); }
-    .mh-card-icon { width:46px; height:46px; border-radius:15px; background:#e8f5eb; display:flex; align-items:center; justify-content:center; font-size:1.4rem; margin-bottom:12px; }
-    .mh-card-title { color:#214f42; font-size:1.03rem; font-weight:800; margin-bottom:6px; }
-    .mh-card-copy { color:#71857d; font-size:.9rem; line-height:1.6; }
-    .mh-friend { background:linear-gradient(145deg,#f0f8f1,#e4f2e8); border:1px solid #deebe0; border-radius:22px; padding:25px; min-height:230px; }
-    .mh-friend-heart { color:#39856a; font-size:2.1rem; margin-bottom:8px; }
-    .mh-friend h3 { margin:0 0 10px; }
-    .mh-friend p { color:#587268; line-height:1.8; margin:0; }
-    .mh-quote { color:#426b59; border-left:3px solid #8dbb9a; padding:9px 0 9px 14px; margin-top:17px; font-style:italic; line-height:1.65; }
-    .mh-note { border:1px solid #deebe0; border-radius:17px; padding:17px 20px; margin-top:1.25rem; color:#426b59; background:linear-gradient(110deg,#edf7ef,#f8fbf7); font-style:italic; }
-    div.stButton > button { border-radius:13px; min-height:43px; font-weight:650; border:1px solid #d7e8db; transition:all .18s ease; }
-    div.stButton > button[kind="primary"] { background:linear-gradient(135deg,#2f795d,#459572); border:0; color:white; box-shadow:0 5px 13px rgba(47,121,93,.15); }
-    div.stButton > button:hover { border-color:#83b699; transform:translateY(-1px); }
-    @media(max-width:700px) { .main .block-container { padding-top:1rem; } .mh-hero { border-radius:18px; } }
+    :root {
+        --mh-forest: #173f35;
+        --mh-green: #2e7558;
+        --mh-mint: #eaf4ed;
+        --mh-paper: #fbfcfa;
+        --mh-ink: #253b33;
+        --mh-muted: #687b73;
+        --mh-line: #e1e9e3;
+    }
+    .stApp { background: var(--mh-paper); color: var(--mh-ink); }
+    .main .block-container { max-width: 1240px; padding-top: 1.2rem; padding-bottom: 3.5rem; }
+    h1, h2, h3, h4 { color: var(--mh-forest) !important; letter-spacing: -0.025em; }
+    [data-testid="stSidebar"] { background: #f0f6f1; border-right: 1px solid var(--mh-line); }
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] a { border-radius: 10px !important; margin: 3px 0 !important; }
+    .mh-topbar { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin:.2rem 0 1.15rem; }
+    .mh-brand { display:flex; align-items:center; gap:.7rem; font-weight:800; font-size:1.12rem; letter-spacing:-.03em; color:var(--mh-forest); }
+    .mh-logo { display:flex; align-items:center; justify-content:center; width:42px; height:42px; border-radius:14px; background:var(--mh-forest); color:white; font-size:1.35rem; box-shadow:0 5px 14px #173f3520; }
+    .mh-brand-ai { color:var(--mh-green); }
+    .mh-status { display:inline-flex; align-items:center; gap:.45rem; padding:.48rem .8rem; border:1px solid var(--mh-line); border-radius:999px; color:#567066; background:white; font-size:.78rem; font-weight:650; }
+    .mh-status-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:#54a878; }
+    .mh-hero { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(230px,.65fr); align-items:center; gap:2rem; position:relative; overflow:hidden; padding:clamp(1.6rem,4vw,3.25rem); border:1px solid #dce8de; border-radius:26px; background:linear-gradient(120deg,#e8f3e9 0%,#f5f7ef 62%,#e0eee4 100%); margin:.35rem 0 2rem; }
+    .mh-hero:after { content:""; position:absolute; width:280px; height:280px; border:1px solid #4c88651b; border-radius:50%; right:-95px; top:-115px; box-shadow:0 0 0 35px #4c886509,0 0 0 70px #4c886506; pointer-events:none; }
+    .mh-eyebrow { color:var(--mh-green); text-transform:uppercase; font-size:.72rem; letter-spacing:.15em; font-weight:800; margin-bottom:.9rem; }
+    .mh-hero h1 { font-size:clamp(2.15rem,4.4vw,3.55rem); line-height:1.06; letter-spacing:-.055em; max-width:670px; margin:0 0 1rem; }
+    .mh-hero-copy { max-width:650px; color:#52695f; font-size:1.02rem; line-height:1.85; margin:0; }
+    .mh-hero-aside { position:relative; z-index:1; padding:1.35rem; border:1px solid #ffffffb5; border-radius:21px; background:#ffffff9c; box-shadow:0 12px 34px #214f3710; }
+    .mh-aside-icon { display:flex; align-items:center; justify-content:center; width:48px; height:48px; border-radius:16px; background:#dceee1; color:var(--mh-forest); font-size:1.55rem; margin-bottom:1rem; }
+    .mh-hero-aside h3 { font-size:1.12rem; margin:0 0 .55rem; }
+    .mh-hero-aside p { color:#62756b; font-size:.9rem; line-height:1.75; margin:0; }
+    .mh-section-head { display:flex; align-items:end; justify-content:space-between; gap:1rem; margin:.3rem 0 1rem; }
+    .mh-section-title { color:var(--mh-forest); font-size:1.32rem; font-weight:800; letter-spacing:-.035em; margin:0 0 .28rem; }
+    .mh-section-subtitle { color:var(--mh-muted); font-size:.9rem; margin:0; line-height:1.6; }
+    .mh-feature { min-height:188px; padding:1.3rem; background:#fff; border:1px solid var(--mh-line); border-radius:19px; box-shadow:0 4px 18px #183f2d06; transition:transform .18s ease, box-shadow .18s ease; }
+    .mh-feature-icon { width:44px; height:44px; display:flex; align-items:center; justify-content:center; border-radius:14px; background:var(--mh-mint); font-size:1.35rem; margin-bottom:1rem; }
+    .mh-feature-title { color:var(--mh-forest); font-weight:800; font-size:1rem; margin-bottom:.45rem; }
+    .mh-feature-copy { color:var(--mh-muted); font-size:.88rem; line-height:1.7; min-height:4.5rem; }
+    .mh-values { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.7rem; margin-top:1.6rem; }
+    .mh-value { padding:1rem; background:#f2f7f2; border:1px solid #e4ece4; border-radius:15px; }
+    .mh-value strong { display:block; color:var(--mh-forest); font-size:.88rem; margin-bottom:.28rem; }
+    .mh-value span { display:block; color:var(--mh-muted); font-size:.8rem; line-height:1.55; }
+    .mh-quote-panel { height:100%; min-height:260px; padding:1.55rem; border-radius:21px; background:var(--mh-forest); color:#fff; display:flex; flex-direction:column; justify-content:space-between; }
+    .mh-quote-mark { color:#b5d8be; font-size:2.5rem; line-height:1; }
+    .mh-quote-panel h3 { color:#fff !important; font-size:1.42rem; line-height:1.35; margin:.8rem 0; letter-spacing:-.035em; }
+    .mh-quote-panel p { color:#d1e2d7; font-size:.88rem; line-height:1.75; margin:0; }
+    .mh-quote-foot { margin-top:1.5rem; color:#b7d7c2; font-size:.78rem; letter-spacing:.04em; }
+    .mh-bottom-note { display:flex; align-items:flex-start; gap:.8rem; margin-top:1.6rem; padding:1.05rem 1.2rem; border:1px solid var(--mh-line); border-radius:15px; background:#fff; color:#5d7167; font-size:.86rem; line-height:1.7; }
+    div.stButton > button { border-radius:12px; min-height:43px; font-weight:700; border:1px solid #d9e5dc; transition:all .18s ease; }
+    div.stButton > button[kind="primary"] { background:var(--mh-green); border:1px solid var(--mh-green); color:white; box-shadow:0 5px 13px #2e75581c; }
+    div.stButton > button:hover { border-color:#80ad91; transform:translateY(-1px); }
+    @media(max-width:760px) {
+        .main .block-container { padding-top:.8rem; }
+        .mh-hero { grid-template-columns:1fr; gap:1.2rem; border-radius:20px; }
+        .mh-hero-aside { max-width:none; }
+        .mh-values { grid-template-columns:1fr; }
+        .mh-status { font-size:.7rem; }
+        .mh-section-head { align-items:start; flex-direction:column; }
+    }
     </style>
-    """, unsafe_allow_html=True
+    """,
+    unsafe_allow_html=True,
 )
 
 st.markdown(
     """
-    <div class="mh-brandline">
-      <div class="mh-brand"><span class="mh-brand-mark">🌿</span><span>MindHeal <span style="color:#5b9c79">AI</span></span></div>
-      <div class="mh-tag">Your mind • Our care</div>
+    <div class="mh-topbar">
+      <div class="mh-brand"><span class="mh-logo">✳</span><span>MindHeal <span class="mh-brand-ai">AI</span></span></div>
+      <div class="mh-status"><span class="mh-status-dot"></span> A little space for you</div>
     </div>
     <section class="mh-hero">
-      <div class="mh-eyebrow">A safe space to be yourself</div>
-      <h1>Hey, I'm glad you're here. ♡</h1>
-      <p>You don't need to fix anything or find the perfect words. Talk about your day, share what's on your mind, or simply say hello. I'll be here to listen, like a friend.</p>
+      <div>
+        <div class="mh-eyebrow">A thoughtful AI companion</div>
+        <h1>A place to pause, reflect, and be yourself.</h1>
+        <p class="mh-hero-copy">Some days you have a lot to say. Other days, you just need a friendly conversation. Start wherever you are — no perfect words, no pressure, just a warm space to talk.</p>
+      </div>
+      <aside class="mh-hero-aside">
+        <div class="mh-aside-icon">♡</div>
+        <h3>Come as you are.</h3>
+        <p>Your thoughts matter. Share what is on your mind, explore a topic, or take a quiet moment for yourself.</p>
+      </aside>
     </section>
-    """, unsafe_allow_html=True
+    """,
+    unsafe_allow_html=True,
 )
 
-left, right = st.columns([1.55, 1], gap="large")
+st.markdown(
+    """
+    <div class="mh-section-head">
+      <div>
+        <div class="mh-section-title">Explore your space</div>
+        <p class="mh-section-subtitle">Choose what feels right for you today.</p>
+      </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+col1, col2, col3 = st.columns(3, gap="medium")
+with col1:
+    st.markdown('<div class="mh-feature"><div class="mh-feature-icon">💬</div><div class="mh-feature-title">AI Companion</div><div class="mh-feature-copy">Have a friendly conversation, share a thought, or ask a question at your own pace.</div></div>', unsafe_allow_html=True)
+    if st.button("Start a conversation  →", key="start_conversation", type="primary", use_container_width=True):
+        st.switch_page("pages/1_Chat.py")
+with col2:
+    st.markdown('<div class="mh-feature"><div class="mh-feature-icon">🎧</div><div class="mh-feature-title">Music & Relaxation</div><div class="mh-feature-copy">Find a calmer moment with the music and sounds available in your space.</div></div>', unsafe_allow_html=True)
+    if st.button("Open music player  →", key="open_music", use_container_width=True):
+        st.switch_page("pages/5_Music_and_Relaxation.py")
+with col3:
+    st.markdown('<div class="mh-feature"><div class="mh-feature-icon">📚</div><div class="mh-feature-title">PDF & Documents</div><div class="mh-feature-copy">Upload a PDF and explore its contents by asking questions about the document.</div></div>', unsafe_allow_html=True)
+    if st.button("Explore PDF tools  →", key="open_pdf", use_container_width=True):
+        st.switch_page("pages/5_Upload_PDF.py")
+
+st.markdown('<div style="height:1.2rem"></div>', unsafe_allow_html=True)
+left, right = st.columns([1.25, 1], gap="large")
 with left:
-    st.markdown('<div class="mh-section-title">Your space, your way</div>', unsafe_allow_html=True)
-    a, b = st.columns(2, gap="medium")
-    with a:
-        st.markdown('<div class="mh-card"><div class="mh-card-icon">💬</div><div class="mh-card-title">AI Companion</div><div class="mh-card-copy">Talk, share a thought, or have a little conversation. No pressure, no judgement.</div></div>', unsafe_allow_html=True)
-        if st.button("Chat with me", key="start_conversation", type="primary", use_container_width=True):
-            st.switch_page("pages/1_Chat.py")
-    with b:
-        st.markdown('<div class="mh-card"><div class="mh-card-icon">🎵</div><div class="mh-card-title">Music & Relaxation</div><div class="mh-card-copy">Spend a quiet moment with the music and sounds already available in the app.</div></div>', unsafe_allow_html=True)
-        if st.button("Open music player", key="open_music", use_container_width=True):
-            st.switch_page("pages/5_Music_and_Relaxation.py")
-    c, d = st.columns(2, gap="medium")
-    with c:
-        st.markdown('<div class="mh-card"><div class="mh-card-icon">📄</div><div class="mh-card-title">PDF / Documents</div><div class="mh-card-copy">Upload a PDF and ask questions about the document.</div></div>', unsafe_allow_html=True)
-        if st.button("Open PDF tools", key="open_pdf", use_container_width=True):
-            st.switch_page("pages/5_Upload_PDF.py")
-    with d:
-        st.markdown('<div class="mh-card"><div class="mh-card-icon">🤍</div><div class="mh-card-title">Support topics</div><div class="mh-card-copy">Open the existing topics for fears, addictions, and mental discomforts.</div></div>', unsafe_allow_html=True)
-        if st.button("Explore support topics", key="open_topics", use_container_width=True):
+    st.markdown(
+        """
+        <div class="mh-section-title">Made to feel welcoming</div>
+        <p class="mh-section-subtitle">A few principles behind your MindHeal experience.</p>
+        <div class="mh-values">
+          <div class="mh-value"><strong>🌱 No pressure</strong><span>Start with one word or a whole story.</span></div>
+          <div class="mh-value"><strong>🤝 A friendly tone</strong><span>Warm conversation without judgement.</span></div>
+          <div class="mh-value"><strong>🔒 Your choice</strong><span>Explore features at your own pace.</span></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown('<div style="height:1.1rem"></div>', unsafe_allow_html=True)
+    topics_col, settings_col = st.columns(2, gap="small")
+    with topics_col:
+        if st.button("♡  Explore support topics", key="open_topics", use_container_width=True):
             st.switch_page("pages/2_Mental_Discomforts.py")
-
+    with settings_col:
+        if st.button("⚙️  Personalize settings", key="open_settings", use_container_width=True):
+            st.switch_page("pages/8_Settings.py")
 with right:
-    st.markdown("""<div class="mh-friend"><div class="mh-friend-heart">♡</div><h3>You don't have to pretend here.</h3><p>Whatever kind of day you're having, you can show up just as you are. You can say a lot, a little, or nothing at all.</p><div class="mh-quote">I'm listening. Take your time — I'm here with you.</div></div>""", unsafe_allow_html=True)
-    st.markdown('<div class="mh-section-title" style="margin-top:1.25rem">A few more things in your space</div>', unsafe_allow_html=True)
-    if st.button("⚙️  Settings", key="open_settings", use_container_width=True):
-        st.switch_page("pages/8_Settings.py")
-    st.caption("You can personalize the app using its existing settings.")
+    st.markdown(
+        """
+        <div class="mh-quote-panel">
+          <div>
+            <div class="mh-quote-mark">“</div>
+            <h3>You don't have to have it all figured out to begin.</h3>
+            <p>Take your time. Talk about your day, ask what you have been wondering about, or simply say hello.</p>
+          </div>
+          <div class="mh-quote-foot">YOUR SPACE · YOUR PACE</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-st.markdown('<div class="mh-note">🌱 &nbsp; You are welcome here, exactly as you are. No pressure to explain everything, and no need to have the right words.</div>', unsafe_allow_html=True)
-# Visitor counter (restored from the original project). It requires the existing
-# Supabase visitor-counter configuration; the homepage remains usable without it.
+st.markdown(
+    '<div class="mh-bottom-note"><span>✦</span><span><strong>A gentle reminder:</strong> MindHeal AI is designed for friendly conversation and emotional support. It is not a replacement for qualified professional care.</span></div>',
+    unsafe_allow_html=True,
+)
+
+# Preserve the existing visitor counter and its diagnostics.
 visitor_count = register_visitor()
 if visitor_count is not None:
     render_visitor_gauge(visitor_count, maximum=100000)
 else:
     render_visitor_diagnostic()
 
-st.caption("MindHeal AI is a friendly emotional-support companion and is not a replacement for qualified professional care.")
+st.caption("MindHeal AI · A friendly place to pause and talk.")
