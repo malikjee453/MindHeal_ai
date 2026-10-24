@@ -223,15 +223,21 @@ def respond(user_text, response_style="short", response_language="English", memo
         answer = llm_chat(
             [
                 {"role": "system", "content": (
-                    "You are MindHeal AI, a warm, practical conversational assistant. "
+                    "You are MindHeal AI, a warm, attentive friend-like conversational assistant. "
                     "Answer the latest follow-up directly using the recent conversation. "
-                    "Add a genuinely new useful point and avoid repeating prior advice. "
+                    "Make the reply specific to the user's exact words and context. "
+                    "Avoid repeating any opening, reassurance, sentence structure, metaphor, "
+                    "or advice already used in recent replies; do not default to stock lines "
+                    "such as 'I understand', 'That sounds difficult', or 'You're not alone'. "
+                    "Vary vocabulary and sentence rhythm naturally without sounding ornate. "
+                    "Choose the response shape that fits this message; do not force advice, "
+                    "validation, or a question into every reply. Add a fresh point when useful. "
                     "Do not search the web or mention internal tools. " + language_rule + " " + length_rule + " " + style_rule
                 )},
                 {"role": "user", "content": "Recent conversation:\n" + conversation_context + "\n\nLatest user message: " + user_text},
             ],
-            temperature=0.5,
-            max_tokens=420 if response_style in ("detailed", "blunt") else 120,
+            temperature=0.72 if response_style != "blunt" else 0.5,
+            max_tokens=420 if response_style in ("detailed", "blunt") else 160,
         )
         return answer, [], "FOLLOW_UP"
 
