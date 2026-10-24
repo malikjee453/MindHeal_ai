@@ -194,7 +194,14 @@ def respond(user_text, response_style="short", response_language="English", memo
     # Treat short contextual messages as follow-ups too, even when wording changes.
     # This prevents a third/fourth follow-up from falling back into slow search/RAG.
     normalized_user_text = " ".join(str(user_text or "").lower().split()).strip(" .!?")
-    explicit_search = normalized_user_text.startswith(("/search ", "search: ", "web: "))
+    explicit_search = (
+        normalized_user_text.startswith(("/search ", "search:", "web:"))
+        or normalized_user_text in ("/search", "search online", "search the web")
+        or normalized_user_text.startswith((
+            "search online for ", "search the web for ", "look up online ",
+            "look this up ", "find online ", "google ",
+        ))
+    )
     short_contextual_message = (
         bool(conversation_context)
         and len(normalized_user_text.split()) <= 12
@@ -206,7 +213,7 @@ def respond(user_text, response_style="short", response_language="English", memo
     )
     # Blunt Answer should research each turn, including follow-ups, so it can
     # ground advice in evidence rather than defaulting to the same friendly reply.
-    follow_up = response_style != "blunt" and bool(conversation_context) and (
+    follow_up = response_style != "blunt" and not explicit_search and bool(conversation_context) and (
         is_conversational_follow_up(user_text) or short_contextual_message
     )
     if follow_up:
@@ -255,6 +262,13 @@ def respond(user_text, response_style="short", response_language="English", memo
         )
     else:
         search_query = clean_search_query(user_text) if web_requested else user_text
+        # When a user explicitly asks to search for a short follow-up, use the
+        # prior turns to resolve "it", "that", or other references.
+        if web_requested and conversation_context and explicit_search:
+            search_query = (
+                "Recent conversation context: " + str(conversation_context)[-1800:]
+                + "\\nCurrent search request: " + search_query
+            )[:2200]
     route = route_message(user_text)
     context, sources = retrieve_context(user_text)
 
