@@ -210,6 +210,9 @@ def respond(user_text, response_style="short", response_language="English", memo
         is_conversational_follow_up(user_text) or short_contextual_message
     )
     if follow_up:
+        # Keep follow-up prompts bounded. Long chat histories can inflate the
+        # request and make a simple "why?" or "tell me more" appear frozen.
+        bounded_history = str(conversation_context or "")[-6000:]
         language_rule = "Answer in natural Pakistani Urdu script." if str(response_language).lower().startswith("urdu") else "Answer in English."
         if response_style == "detailed":
             length_rule = "Use about 120-200 words."
