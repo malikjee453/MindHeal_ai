@@ -207,8 +207,11 @@ def respond(user_text, response_style="short", response_language="English", memo
         and len(normalized_user_text.split()) <= 12
         and not explicit_search
         and not any(term in normalized_user_text for term in (
-            "latest news", "today's", "right now", "current price", "live score",
-            "weather in", "exchange rate", "breaking news",
+            "latest news", "latest", "headlines", "news today", "today's news",
+            "gold rate", "gold price", "silver rate", "bitcoin price", "stock price",
+            "rates today", "rate today", "price today", "today rate", "current rate",
+            "today's", "right now", "current price", "live score", "weather in",
+            "exchange rate", "usd to pkr", "petrol price", "breaking news",
         ))
     )
     # Blunt Answer should research each turn, including follow-ups, so it can
