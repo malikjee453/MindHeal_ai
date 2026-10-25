@@ -1,64 +1,84 @@
-"""Lightweight web search for current/public information.
+"""Lightweight public web search using Google Search results.
 
-Uses DuckDuckGo's HTML results page; no API key is required.
+No separate search API key is required. Google may rate-limit automated requests;
+if that happens, the function returns no results rather than inventing information.
 """
 from html.parser import HTMLParser
-from urllib.parse import quote
+from urllib.parse import quote, urlparse, parse_qs
 import requests
 
 
-class _ResultsParser(HTMLParser):
+class _GoogleResultsParser(HTMLParser):
     def __init__(self):
         super().__init__()
         self.results = []
-        self._current = None
-        self._capture = None
-        self._snippet_target = None
+        self._anchor = None
+        self._inside_h3 = False
+        self._snippet = None
+        self._snippet_depth = 0
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
-        classes = attrs.get("class", "")
-        if tag == "a" and "result__a" in classes:
-            self._current = {"title": "", "url": attrs.get("href", ""), "snippet": ""}
-            self._capture = "title"
-        elif "result__snippet" in classes and self.results:
-            self._snippet_target = self.results[-1]
-            self._capture = "snippet"
+        classes = attrs.get("class", "").split()
+
+        if tag == "a" and attrs.get("href", "").startswith("http"):
+            href = attrs["href"]
+            parsed = urlparse(href)
+            # Google result links can occasionally be wrapped in /url?q=...
+            if parsed.path == "/url":
+                href = parse_qs(parsed.query).get("q", [href])[0]
+            if href.startswith("http") and "google.com" not in urlparse(href).netloc:
+                self._anchor = {"title": "", "url": href, "snippet": ""}
+        elif tag == "h3" and self._anchor is not None:
+            self._inside_h3 = True
+
+        if "VwiC3b" in classes or "yXK7lf" in classes:
+            self._snippet = self.results[-1] if self.results else None
+            self._snippet_depth = 1
 
     def handle_data(self, data):
-        if self._capture == "title" and self._current is not None:
-            self._current["title"] += data
-        elif self._capture == "snippet" and self._snippet_target is not None:
-            self._snippet_target["snippet"] += data
+        if self._inside_h3 and self._anchor is not None:
+            self._anchor["title"] += data
+        elif self._snippet is not None:
+            self._snippet["snippet"] += data
 
     def handle_endtag(self, tag):
-        if tag == "a" and self._capture == "title" and self._current is not None:
-            item = self._current
+        if tag == "h3" and self._inside_h3:
+            self._inside_h3 = False
+        elif tag == "a" and self._anchor is not None and not self._inside_h3:
+            item = self._anchor
             item["title"] = " ".join(item["title"].split())
-            item["url"] = item["url"].strip()
             if item["title"] and item["url"].startswith("http"):
                 if not any(x["url"] == item["url"] for x in self.results):
                     self.results.append(item)
-            self._current = None
-            self._capture = None
-        elif self._capture == "snippet" and tag in ("a", "div", "span"):
-            self._capture = None
-            self._snippet_target = None
+            self._anchor = None
+        if self._snippet is not None:
+            if tag in ("div", "span"):
+                self._snippet_depth -= 1
+                if self._snippet_depth <= 0:
+                    self._snippet = None
 
 
-def search_web(query, max_results=3):
-    """Return public web results; errors safely return an empty list."""
-    query = " ".join(str(query or "").split())[:300]
+def search_web(query, max_results=5):
+    """Return Google web results; network, block, and parser errors return []."""
+    query = " ".join(str(query or "").split())[:500]
     if not query:
         return []
     try:
         response = requests.get(
-            "https://html.duckduckgo.com/html/?q=" + quote(query),
-            headers={"User-Agent": "Mozilla/5.0 (compatible; MindHealAI/1.0)"},
-            timeout=3,
+            "https://www.google.com/search?q=" + quote(query) + "&num=" + str(max_results),
+            headers={
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/124.0.0.0 Safari/537.36"
+                ),
+                "Accept-Language": "en-US,en;q=0.9",
+            },
+            timeout=(3, 8),
         )
         response.raise_for_status()
-        parser = _ResultsParser()
+        parser = _GoogleResultsParser()
         parser.feed(response.text)
         for item in parser.results:
             item["snippet"] = " ".join(item["snippet"].split())
@@ -77,7 +97,20 @@ def needs_web_search(text):
     if not value:
         return False
 
-    # Personal-support statements should remain conversational, not trigger web search.
+    # Explicit current/live intents always trigger a web lookup.
+    live_terms = (
+        "latest", "breaking news", "headlines", "news today", "today's news",
+        "gold rate", "gold price", "silver rate", "silver price", "bitcoin price",
+        "crypto price", "stock price", "share price", "market rate", "current rate",
+        "price today", "rates today", "rate today", "today rate", "today's rate",
+        "exchange rate", "usd to pkr", "pkr to usd", "currency rate",
+        "petrol price", "fuel price", "current price", "right now", "live score",
+        "weather today", "weather in", "forecast today", "latest update",
+        "current president", "current prime minister", "today in pakistan",
+    )
+    if any(term in value for term in live_terms):
+        return True
+
     support_phrases = (
         "i feel ", "i am feeling", "i'm feeling", "i feel like",
         "i am sad", "i'm sad", "i am lonely", "i'm lonely",
@@ -90,8 +123,6 @@ def needs_web_search(text):
     if any(phrase in value for phrase in support_phrases):
         return False
 
-    # Only obvious conversational follow-ups skip search; short factual queries
-    # such as "who is Einstein" should still search the web.
     follow_ups = (
         "why?", "why", "how so?", "how so", "tell me more", "explain more",
         "what about it?", "what about it", "and then?", "and then",
@@ -107,8 +138,6 @@ def needs_web_search(text):
     ):
         return False
 
-    # Explicit commands are searchable; other substantive prompts default to
-    # online lookup so the same chat box works as a general search chatbot.
     return True
 
 
