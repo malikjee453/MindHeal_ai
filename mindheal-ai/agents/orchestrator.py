@@ -265,6 +265,27 @@ def respond(user_text, response_style="short", response_language="English", memo
         )
     else:
         search_query = clean_search_query(user_text) if web_requested else user_text
+        # Turn common current-data questions into targeted Google queries.
+        # This is especially important for Pakistan gold rates, where a vague
+        # query can return generic pages instead of today's local market report.
+        market_query_text = str(user_text or "").lower()
+        if any(term in market_query_text for term in (
+            "gold rate", "gold rates", "gold price", "gold prices",
+            "sona rate", "sone ka rate", "سونے کا ریٹ", "سونے کی قیمت",
+        )):
+            search_query = (
+                "Pakistan gold rate today 24 karat per tola 10 gram "
+                "Sarafa Association latest gold price date"
+            )
+        elif any(term in market_query_text for term in (
+            "usd to pkr", "pkr to usd", "exchange rate", "currency rate",
+            "dollar rate", "dollar price",
+        )):
+            search_query = "USD to PKR exchange rate today Pakistan latest"
+        elif any(term in market_query_text for term in (
+            "latest news", "headlines", "news today", "breaking news",
+        )):
+            search_query = "Pakistan latest news headlines today"
         # When a user explicitly asks to search for a short follow-up, use the
         # prior turns to resolve "it", "that", or other references.
         if web_requested and conversation_context and explicit_search:
