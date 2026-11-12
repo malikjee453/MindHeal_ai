@@ -85,7 +85,7 @@ st.markdown(
     .mh-counter {
         margin: .5rem auto 0; padding: .7rem 1rem; width: fit-content;
         color: #53675d; background: white; border: 1px solid var(--mh-line);
-        border-radius: 999px; font-size: .9rem;
+        border-radius: 999px; font-size: .14rem;
     }
     @media (max-width: 760px) {
         .main .block-container { padding-top: .25rem; }
