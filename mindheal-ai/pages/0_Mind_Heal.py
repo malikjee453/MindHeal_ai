@@ -115,8 +115,8 @@ st.markdown(
     <section class="mh-home">
       <div class="mh-brand"><span class="mh-logo">✳</span><span>MindHeal <span class="mh-brand-ai">AI</span></span></div>
       <div class="mh-heart">♡</div>
-      <h1>Share, what you can't tell anyone.</h1>
-      <h2>Get answer,which helps you.</h2>
+      <h1>Share your mind with me.</h1>
+      <h2>Get healed, with talk.</h2>
       <p class="mh-greeting">Take a breath. Be yourself. I'm here for a friendly chat whenever you're ready.</p>
     </section>
     """,
