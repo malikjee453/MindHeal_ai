@@ -79,7 +79,7 @@ st.markdown(
     }
     div.stButton > button[kind="primary"] {
         background: var(--mh-green); border: 1px solid var(--mh-green);
-        color: white; box-shadow: 0 5px 18px #2e75581c;
+        color: white; box-shadow: 0 5px 26px #2e75581c;
     }
     div.stButton > button:hover { border-color: #80ad91; transform: translateY(-1px); }
     .mh-counter {
