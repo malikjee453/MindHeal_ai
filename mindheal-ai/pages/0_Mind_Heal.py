@@ -74,12 +74,12 @@ st.markdown(
         font-size: 1.6rem;
     }
     div.stButton > button {
-        border-radius: 14px; min-height: 48px; font-weight: 750;
+        border-radius: 21px; min-height: 48px; font-weight: 750;
         border: 1px solid #d9e5dc; transition: all .18s ease;
     }
     div.stButton > button[kind="primary"] {
         background: var(--mh-green); border: 1px solid var(--mh-green);
-        color: white; box-shadow: 0 5px 26px #2e75581c;
+        color: white; box-shadow: 0 5px 13px #2e75581c;
     }
     div.stButton > button:hover { border-color: #80ad91; transform: translateY(-1px); }
     .mh-counter {
