@@ -73,10 +73,16 @@ st.markdown(
         border-radius: 17px; background: #dceee1; color: var(--mh-forest);
         font-size: 1.6rem;
     }
-    div.stButton > button {
-        border-radius: 21px; min-height: 48px; font-weight: 750;
-        border: 1px solid #d9e5dc; transition: all .18s ease;
-    }
+    
+div.stButton > button {
+    border-radius: 21px;
+    min-height: 48px;
+    font-size: 26px;
+    font-weight: 750;
+    border: 1px solid #d9e5dc;
+    transition: all .18s ease;
+}
+
     div.stButton > button[kind="primary"] {
         background: var(--mh-green); border: 1px solid var(--mh-green);
         color: white; box-shadow: 0 5px 13px #2e75581c;
