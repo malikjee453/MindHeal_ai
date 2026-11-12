@@ -74,13 +74,21 @@ st.markdown(
         font-size: 1.6rem;
     }
     
-div.stButton > button {
-    border-radius: 21px;
-    min-height: 48px;
-    font-size: 26px;
-    font-weight: 750;
-    border: 1px solid #d9e5dc;
-    transition: all .18s ease;
+
+/* Let's Talk button */
+.st-key-start_conversation button {
+    border-radius: 21px !important;
+    min-height: 58px !important;
+    font-size: 28px !important;
+    font-weight: 800 !important;
+}
+
+/* Target the actual text inside the button */
+.st-key-start_conversation button p,
+.st-key-start_conversation button span {
+    font-size: 28px !important;
+    font-weight: 800 !important;
+    line-height: 1.3 !important;
 }
 
     div.stButton > button[kind="primary"] {
